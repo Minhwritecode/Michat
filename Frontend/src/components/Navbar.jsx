@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../stores/useAuthStore";
-import { LogOut, MessageSquare, Settings, User } from "lucide-react";
+import { LogOut, MessageSquare, Settings, User, Users } from "lucide-react";
 import { useState } from "react";
 import CreateStory from "./stories/CreateStory";
 
@@ -30,6 +30,12 @@ const Navbar = () => {
                         >
                             + Tạo Story
                         </button>
+                        <Link
+                            to={"/groups"}
+                            className={`btn btn-sm gap-2 transition-colors`}>
+                            <Users className="w-4 h-4" />
+                            <span className="hidden sm:inline">Nhóm</span>
+                        </Link>
                         <Link
                             to={"/settings"}
                             className={`btn btn-sm gap-2 transition-colors`}>
