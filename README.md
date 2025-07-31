@@ -313,6 +313,6 @@ This project is licensed under the ISC License - see the [LICENSE](LICENSE) file
 ---
 
 <div align="center">
-  <p>Made with ❤️ by [Your Name]</p>
+  <p>Made with ❤️ by [Đinh Trần Tiến Minh]</p>
   <p>If you find this project helpful, please give it a ⭐</p>
 </div>
