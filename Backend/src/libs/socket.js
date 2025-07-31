@@ -30,6 +30,35 @@ io.on("connection", (socket) => {
     // io.emit() is used to send events to all the connected clients
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
 
+    // WebRTC Signaling for calls
+    socket.on("call:user", ({ to, offer, callType, from }) => {
+        const targetSockets = getReceiverSocketId(to);
+        targetSockets.forEach(sid => {
+            io.to(sid).emit("call:incoming", { from, offer, callType });
+        });
+    });
+
+    socket.on("call:answer", ({ to, answer }) => {
+        const targetSockets = getReceiverSocketId(to);
+        targetSockets.forEach(sid => {
+            io.to(sid).emit("call:answer", { answer });
+        });
+    });
+
+    socket.on("call:ice-candidate", ({ to, candidate }) => {
+        const targetSockets = getReceiverSocketId(to);
+        targetSockets.forEach(sid => {
+            io.to(sid).emit("call:ice-candidate", { candidate });
+        });
+    });
+
+    socket.on("call:end", ({ to }) => {
+        const targetSockets = getReceiverSocketId(to);
+        targetSockets.forEach(sid => {
+            io.to(sid).emit("call:end");
+        });
+    });
+
     socket.on("disconnect", () => {
         console.log("A user disconnected", socket.id);
         if (userId && userSocketMap[userId]) {

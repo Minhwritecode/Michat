@@ -13,7 +13,7 @@ export const useChatStore = create((set, get) => ({
     getUsers: async () => {
         set({ isUsersLoading: true });
         try {
-            const res = await axiosInstance.get("/messages/users");
+            const res = await axiosInstance.get("/auth/users-with-unread");
             set({ users: res.data });
         } catch (error) {
             toast.error(error.response.data.message);
@@ -57,11 +57,29 @@ export const useChatStore = create((set, get) => ({
                 messages: [...get().messages, newMessage],
             });
         });
+
+        socket.on("messageReaction", ({ messageId, reactions }) => {
+            set({
+                messages: get().messages.map(msg =>
+                    msg._id === messageId ? { ...msg, reactions } : msg
+                )
+            });
+        });
+
+        socket.on("messageEdited", ({ messageId, text, editedAt }) => {
+            set({
+                messages: get().messages.map(msg =>
+                    msg._id === messageId ? { ...msg, text, isEdited: true, editedAt } : msg
+                )
+            });
+        });
     },
 
     unsubscribeFromMessages: () => {
         const socket = useAuthStore.getState().socket;
         socket.off("newMessage");
+        socket.off("messageReaction");
+        socket.off("messageEdited");
     },
 
     setSelectedUser: (selectedUser) => set({ selectedUser }),
