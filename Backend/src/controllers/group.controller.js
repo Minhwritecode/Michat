@@ -1,7 +1,7 @@
 import Group from "../models/group.model.js";
 import User from "../models/user.model.js";
 import { uploadToCloudinary } from "../libs/cloudinary.js";
-import ApiError from "../libs/utils.js";
+import { ApiError } from "../libs/utils.js";
 
 // Create a new group
 export const createGroup = async (req, res, next) => {
