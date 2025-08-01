@@ -1,15 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useGroupStore } from "../stores/useGroupStore";
-import { useAuthStore } from "../stores/useAuthStore";
-import { Users, Plus, ArrowLeft, MessageSquare } from "lucide-react";
+import { Users, Plus, ArrowLeft, MessageSquare, Loader2, UserPlus } from "lucide-react";
 import GroupList from "../components/groups/GroupList";
 import GroupChat from "../components/groups/GroupChat";
 import CreateGroupModal from "../components/groups/CreateGroupModal";
+import JoinGroupModal from "../components/groups/JoinGroupModal";
 
 const GroupsPage = () => {
-    const { selectedGroup, clearSelectedGroup } = useGroupStore();
-    const { authUser } = useAuthStore();
+    const { selectedGroup, clearSelectedGroup, fetchGroups, loading, error } = useGroupStore();
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showJoinModal, setShowJoinModal] = useState(false);
+
+    useEffect(() => {
+        fetchGroups();
+    }, []);
 
     const handleBackToList = () => {
         clearSelectedGroup();
@@ -71,13 +75,22 @@ const GroupsPage = () => {
                             </div>
                         </div>
 
-                        <button
-                            onClick={() => setShowCreateModal(true)}
-                            className="btn btn-primary btn-lg"
-                        >
-                            <Plus size={20} />
-                            Tạo nhóm mới
-                        </button>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowJoinModal(true)}
+                                className="btn btn-outline btn-lg"
+                            >
+                                <UserPlus size={20} />
+                                Tham gia nhóm
+                            </button>
+                            <button
+                                onClick={() => setShowCreateModal(true)}
+                                className="btn btn-primary btn-lg"
+                            >
+                                <Plus size={20} />
+                                Tạo nhóm mới
+                            </button>
+                        </div>
                     </div>
 
                     {/* Stats Cards */}
@@ -88,7 +101,9 @@ const GroupsPage = () => {
                                     <Users size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-bold">0</h3>
+                                    <h3 className="text-2xl font-bold">
+                                        {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "0"}
+                                    </h3>
                                     <p className="text-base-content/70">Tổng số nhóm</p>
                                 </div>
                             </div>
@@ -119,6 +134,16 @@ const GroupsPage = () => {
                         </div>
                     </div>
 
+                    {/* Error Message */}
+                    {error && (
+                        <div className="alert alert-error">
+                            <div className="flex items-center gap-2">
+                                <span>⚠️</span>
+                                <span>{error}</span>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Groups List */}
                     <div className="bg-base-100 rounded-xl shadow-lg border border-base-300">
                         <GroupList />
@@ -129,6 +154,12 @@ const GroupsPage = () => {
                 <CreateGroupModal
                     isOpen={showCreateModal}
                     onClose={() => setShowCreateModal(false)}
+                />
+
+                {/* Join Group Modal */}
+                <JoinGroupModal
+                    isOpen={showJoinModal}
+                    onClose={() => setShowJoinModal(false)}
                 />
             </div>
         </div>

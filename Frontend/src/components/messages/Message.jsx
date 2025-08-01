@@ -11,10 +11,12 @@ import {
     Download,
     Play,
     FileText,
-    Forward
+    Forward,
+    Globe
 } from "lucide-react";
 import toast from "react-hot-toast";
 import LinkPreview from "../LinkPreview";
+import axios from "../../libs/axios";
 
 const Message = ({ message, onReply, onEdit, onForward }) => {
     const { authUser } = useAuthStore();
@@ -22,6 +24,8 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
     const [showReactions, setShowReactions] = useState(false);
     const contextMenuRef = useRef(null);
     const isOwnMessage = message.senderId._id === authUser._id;
+    const [translated, setTranslated] = useState(null);
+    const [translating, setTranslating] = useState(false);
 
     const handleReaction = async (emoji) => {
         try {
@@ -71,6 +75,21 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const handleTranslate = async () => {
+        if (translating || translated) return;
+        setTranslating(true);
+        try {
+            const res = await axios.post("/api/translate", {
+                text: message.text,
+                targetLang: "en" // hoặc lấy từ user settings
+            });
+            setTranslated(res.data.translated);
+        } catch {
+            setTranslated("Không thể dịch tin nhắn này.");
+        }
+        setTranslating(false);
     };
 
     const renderAttachment = (attachment) => {
@@ -303,6 +322,13 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
                         <MoreVertical size={12} />
                     </button>
                 </div>
+
+                {translated && (
+                    <div className="mt-1 text-xs bg-blue-50 text-blue-700 rounded-lg px-3 py-2 flex items-center gap-2 animate-fade-in">
+                        <Globe size={13} className="text-blue-400" />
+                        <span className="italic">{translated}</span>
+                    </div>
+                )}
             </div>
         </div>
     );

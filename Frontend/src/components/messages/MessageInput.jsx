@@ -1,14 +1,43 @@
 import { useRef, useState } from "react";
 import { useChatStore } from "../../stores/useChatStore";
-import { Image, Send, X, Paperclip, Smile, Video, FileText, Music, Mic, Search, Forward } from "lucide-react";
+import { 
+    Image, 
+    Send, 
+    X, 
+    Paperclip, 
+    Smile, 
+    Video, 
+    FileText, 
+    Music, 
+    Mic, 
+    Search, 
+    Forward, 
+    Edit, 
+    AtSign,
+    MapPin,
+    BarChart3,
+    Bot
+} from "lucide-react";
 import EmojiPicker from "../emoji/EmojiPicker";
 import GifPicker from "../emoji/GifPicker";
 import VoiceRecorder from "../VoiceRecorder";
 import MessageSearch from "../messages/MessageSearch";
 import MessageForward from "../messages/MessageForward";
+import LocationShare from "../location/LocationShare";
+import CreatePollModal from "../polls/CreatePollModal";
 import toast from "react-hot-toast";
+import BotModal from "../bot/BotModal";
+import SmartSuggestions from "../bot/SmartSuggestions";
+import IntegrationsMenu from "../integrations/IntegrationsMenu";
 
-const MessageInput = ({ replyTo, editingMessage, onCancelEdit }) => {
+const MessageInput = ({ 
+    replyTo, 
+    editingMessage, 
+    onCancelEdit, 
+    group = null, 
+    privateMessageTo = null,
+    onPrivateMessageChange = null 
+}) => {
     const [text, setText] = useState(editingMessage?.text || "");
     const [attachments, setAttachments] = useState([]);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -16,9 +45,12 @@ const MessageInput = ({ replyTo, editingMessage, onCancelEdit }) => {
     const [showVoiceRecorder, setShowVoiceRecorder] = useState(false);
     const [showMessageSearch, setShowMessageSearch] = useState(false);
     const [showMessageForward, setShowMessageForward] = useState(false);
+    const [showLocationShare, setShowLocationShare] = useState(false);
+    const [showCreatePoll, setShowCreatePoll] = useState(false);
     const [forwardMessage, setForwardMessage] = useState(null);
     const fileInputRef = useRef(null);
     const { sendMessage, messages } = useChatStore();
+    const [showBotModal, setShowBotModal] = useState(false);
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
@@ -175,9 +207,22 @@ const MessageInput = ({ replyTo, editingMessage, onCancelEdit }) => {
                     <input
                         type="text"
                         className="w-full input input-bordered rounded-lg input-sm sm:input-md"
-                        placeholder="Type a message..."
+                        placeholder={
+                            privateMessageTo 
+                                ? `Nhắn tin riêng cho ${privateMessageTo.fullName}...`
+                                : group 
+                                    ? "Nhắn tin trong nhóm..."
+                                    : "Type a message..."
+                        }
                         value={text}
                         onChange={(e) => setText(e.target.value)}
+                        disabled={
+                            group && 
+                            !group.members.find(m => 
+                                m.user._id === useChatStore.getState().authUser?._id && 
+                                m.isActive
+                            )?.canChat
+                        }
                     />
 
                     {/* File Upload */}
@@ -248,6 +293,50 @@ const MessageInput = ({ replyTo, editingMessage, onCancelEdit }) => {
                         >
                             <Search size={18} />
                         </button>
+
+                        {/* Location Share Button */}
+                        <button
+                            type="button"
+                            className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200"
+                            onClick={() => setShowLocationShare(true)}
+                            title="Share location"
+                        >
+                            <MapPin size={18} />
+                        </button>
+
+                        {/* Create Poll Button (only for groups) */}
+                        {group && (
+                            <button
+                                type="button"
+                                className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200"
+                                onClick={() => setShowCreatePoll(true)}
+                                title="Create poll"
+                            >
+                                <BarChart3 size={18} />
+                            </button>
+                        )}
+
+                        <button
+                            type="button"
+                            className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200"
+                            onClick={() => setShowBotModal(true)}
+                            title="Trợ lý AI"
+                        >
+                            <Bot size={18} />
+                        </button>
+
+                        <IntegrationsMenu
+                            onFilePick={(file) => {
+                                // Handle file pick from integrations
+                                if (file.name) {
+                                    setText(prev => prev + `\n📎 ${file.name}: ${file.url || file.link || file.id}`);
+                                }
+                            }}
+                            onTaskCreate={(task) => {
+                                // Handle task creation from integrations
+                                setText(prev => prev + `\n📋 Task Trello: ${task.title}`);
+                            }}
+                        />
                     </div>
                 </div>
 
@@ -259,6 +348,7 @@ const MessageInput = ({ replyTo, editingMessage, onCancelEdit }) => {
                     {editingMessage ? <Edit size={22} /> : <Send size={22} />}
                 </button>
             </form>
+            <SmartSuggestions text={text} onSelect={s => setText(s)} />
 
             {/* Voice Recorder */}
             {showVoiceRecorder && (
@@ -287,6 +377,27 @@ const MessageInput = ({ replyTo, editingMessage, onCancelEdit }) => {
                     onForward={handleForwardMessage}
                 />
             )}
+
+            {/* Location Share Modal */}
+            <LocationShare
+                isOpen={showLocationShare}
+                onClose={() => setShowLocationShare(false)}
+                receiverId={!group ? privateMessageTo?._id : null}
+                groupId={group?._id}
+            />
+
+            {/* Create Poll Modal */}
+            <CreatePollModal
+                isOpen={showCreatePoll}
+                onClose={() => setShowCreatePoll(false)}
+                groupId={group?._id}
+                onPollCreated={(poll) => {
+                    // Handle poll creation - you might want to add it to messages
+                    console.log("Poll created:", poll);
+                }}
+            />
+
+            <BotModal isOpen={showBotModal} onClose={() => setShowBotModal(false)} />
         </div>
     );
 };
