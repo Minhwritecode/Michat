@@ -2,7 +2,6 @@ import User from "../models/user.model.js";
 import { generateToken } from "../libs/utils.js";
 import bcrypt from "bcryptjs";
 import cloudinary from "../libs/cloudinary.js";
-import { updateProfile } from "../stores/useAuthStore";
 import Message from "../models/message.model.js";
 
 export const signup = async (req, res) => {
