@@ -20,5 +20,8 @@
   "homepage": "https://github.com/Minhwritecode/Michat#readme",
   "dependencies": {
     "react-icons": "^5.5.0"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-react-jsx": "^7.27.1"
   }
 }
