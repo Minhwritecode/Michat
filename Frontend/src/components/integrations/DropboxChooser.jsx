@@ -47,13 +47,6 @@ const DropboxChooser = ({ isOpen, onClose, onPick }) => {
     });
   };
 
-  const getFileIcon = (filename) => {
-    const ext = filename.split('.').pop()?.toLowerCase();
-    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext)) return <Image size={16} />;
-    if (['mp4', 'avi', 'mov', 'wmv', 'flv'].includes(ext)) return <Video size={16} />;
-    if (['mp3', 'wav', 'aac', 'ogg'].includes(ext)) return <Music size={16} />;
-    return <FileText size={16} />;
-  };
 
   if (!isOpen) return null;
 

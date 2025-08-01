@@ -18,12 +18,10 @@ import {
     EyeOff
 } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
-import { useGroupStore } from "../../stores/useGroupStore";
+import useGroupStore from "../../stores/useGroupStore";
 import Message from "../messages/Message";
 import MessageInput from "../messages/MessageInput";
 import EmojiPicker from "../emoji/EmojiPicker";
-import LinkPreview from "../LinkPreview";
-
 const GroupChat = ({ group }) => {
     const { authUser } = useAuthStore();
     const { 
@@ -44,7 +42,6 @@ const GroupChat = ({ group }) => {
     const [inviteCode, setInviteCode] = useState(group.inviteCode || "");
     const [selectedMember, setSelectedMember] = useState(null);
     const [privateMessageTo, setPrivateMessageTo] = useState(null);
-    const [loading, setLoading] = useState(false);
 
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);

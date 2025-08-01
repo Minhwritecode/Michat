@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useGroupStore } from "../stores/useGroupStore";
+import useGroupStore from "../stores/useGroupStore";
 import { Users, Plus, ArrowLeft, MessageSquare, Loader2, UserPlus } from "lucide-react";
 import GroupList from "../components/groups/GroupList";
 import GroupChat from "../components/groups/GroupChat";

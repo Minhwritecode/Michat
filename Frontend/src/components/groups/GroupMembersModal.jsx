@@ -32,7 +32,6 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
     const [selectedMember, setSelectedMember] = useState(null);
     const [showAddMembers, setShowAddMembers] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState([]);
-    const [availableUsers, setAvailableUsers] = useState([]);
 
     const isAdmin = useGroupStore.getState().isGroupAdmin(group?._id, authUser._id);
     const isOwner = useGroupStore.getState().isGroupOwner(group?._id, authUser._id);

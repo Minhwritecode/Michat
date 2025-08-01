@@ -1,6 +1,6 @@
 import React from "react";
 import { Users, MessageSquare, Lock, Globe, Crown, MoreVertical } from "lucide-react";
-import { useGroupStore } from "../../stores/useGroupStore";
+import useGroupStore from "../../stores/useGroupStore";
 import { useAuthStore } from "../../stores/useAuthStore";
 
 const GroupCard = ({ group, onClick, onOptionsClick }) => {

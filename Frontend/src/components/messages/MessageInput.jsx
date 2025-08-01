@@ -35,8 +35,7 @@ const MessageInput = ({
     editingMessage, 
     onCancelEdit, 
     group = null, 
-    privateMessageTo = null,
-    onPrivateMessageChange = null 
+    privateMessageTo = null
 }) => {
     const [text, setText] = useState(editingMessage?.text || "");
     const [attachments, setAttachments] = useState([]);
