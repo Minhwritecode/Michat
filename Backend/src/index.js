@@ -127,8 +127,17 @@ app.get("/", (req, res) => {
         message: "Michat Backend API",
         version: "1.0.0",
         status: "running",
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || "development",
+        frontendUrl: process.env.FRONTEND_URL || "http://localhost:5173"
     });
+});
+
+// ======================
+// Favicon Route
+// ======================
+app.get("/favicon.ico", (req, res) => {
+    res.status(204).end(); // No content for favicon
 });
 
 // ======================
@@ -168,6 +177,10 @@ connectDB()
             console.log(`[${new Date().toISOString()}] 🔗 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`);
             console.log(`[${new Date().toISOString()}] 📊 Health check: http://localhost:${PORT}/health`);
             console.log(`[${new Date().toISOString()}] ✅ MongoDB: Connected successfully`);
+            console.log(`[${new Date().toISOString()}] 🔧 Environment Variables:`);
+            console.log(`[${new Date().toISOString()}]    - NODE_ENV: ${process.env.NODE_ENV}`);
+            console.log(`[${new Date().toISOString()}]    - PORT: ${process.env.PORT}`);
+            console.log(`[${new Date().toISOString()}]    - FRONTEND_URL: ${process.env.FRONTEND_URL}`);
         });
     })
     .catch((err) => {

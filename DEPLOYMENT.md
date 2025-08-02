@@ -29,9 +29,11 @@
 1. **Cải thiện logging** với emoji và thông tin chi tiết
 2. **Thêm health check endpoint** tại `/health`
 3. **Thêm root route** tại `/` để test API
-4. **Thêm 404 handler** cho routes không tồn tại
-5. **Cải thiện error handling** với stack trace trong development
-6. **Cấu hình FRONTEND_URL** trong render.yaml
+4. **Thêm favicon route** để fix lỗi 404 favicon
+5. **Thêm 404 handler** cho routes không tồn tại
+6. **Cải thiện error handling** với stack trace trong development
+7. **Cấu hình FRONTEND_URL** trong render.yaml
+8. **Log environment variables** để debug
 
 ### Kiểm tra deployment:
 
@@ -39,9 +41,22 @@
 2. **Root endpoint:** `https://your-backend.onrender.com/`
 3. **API endpoints:** `https://your-backend.onrender.com/api/auth`
 
+### Debug Environment Variables:
+
+Logs sẽ hiển thị:
+- NODE_ENV
+- PORT  
+- FRONTEND_URL
+
+Nếu FRONTEND_URL vẫn là localhost, hãy kiểm tra:
+1. Environment variables trong Render dashboard
+2. Cấu hình trong render.yaml
+3. Redeploy sau khi thay đổi environment variables
+
 ### Lưu ý:
 - Sử dụng Node.js version 18+ 
 - Đảm bảo tất cả environment variables đã được cấu hình
 - Kiểm tra MongoDB connection
 - Deploy Backend trước, sau đó deploy Frontend
-- Logs sẽ hiển thị thông tin chi tiết hơn 
+- Logs sẽ hiển thị thông tin chi tiết hơn
+- Favicon 404 error đã được fix 
