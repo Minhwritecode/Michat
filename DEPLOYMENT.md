@@ -7,6 +7,12 @@
 1. **Cấu hình Environment Variables trên Render:**
    - `NODE_ENV`: production
    - `PORT`: 10000 (hoặc port mà Render cung cấp)
+   - `MONGODB_URI`: URI của MongoDB database
+   - `JWT_SECRET`: Secret key cho JWT
+   - `CLOUDINARY_CLOUD_NAME`: Cloudinary cloud name
+   - `CLOUDINARY_API_KEY`: Cloudinary API key
+   - `CLOUDINARY_API_SECRET`: Cloudinary API secret
+   - `FRONTEND_URL`: URL của frontend
 
 2. **Build Command:**
    ```
@@ -20,19 +26,12 @@
 
 ### Các thay đổi đã thực hiện:
 
-1. **Downgrade Express** xuống version 4.18.2 (ổn định hơn)
-2. **Cập nhật tất cả dependencies** xuống version ổn định
-3. **Tạo file test.js** đơn giản để test trước
-4. **Đơn giản hóa cấu hình** render.yaml
-5. **Xóa package-lock.json** để cài đặt lại sạch
-
-### Test Deployment:
-
-1. **Deploy với file test.js trước** để đảm bảo Express hoạt động
-2. **Nếu test.js hoạt động**, thay đổi start script về `node src/index.js`
-3. **Thêm các environment variables** cần thiết cho production
+1. **Sửa start script** trong `package.json` về `node src/index.js`
+2. **Sửa socket.js** để không tạo app mới, chỉ tạo server
+3. **Sửa index.js** để attach app vào server từ socket.js
+4. **Giữ nguyên ES modules** và tất cả dependencies
 
 ### Lưu ý:
 - Sử dụng Node.js version 18+ 
-- Đảm bảo tất cả dependencies đã được cài đặt đúng
-- Test với file đơn giản trước khi deploy full application 
+- Đảm bảo tất cả environment variables đã được cấu hình
+- Kiểm tra MongoDB connection 

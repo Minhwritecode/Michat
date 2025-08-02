@@ -43,6 +43,9 @@ app.use("/api/trello", trelloRoutes);
 app.use("/api/location", locationRoutes);
 app.use("/api/polls", pollRoutes);
 
+// Attach app to server
+server.on('request', app);
+
 const PORT = process.env.PORT || 5001;
 
 connectDB()
