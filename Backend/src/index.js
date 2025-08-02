@@ -10,6 +10,8 @@ import messageRoutes from "./routes/message.route.js";
 import storyRoutes from "./routes/story.route.js";
 import groupRoutes from "./routes/group.route.js";
 import trelloRoutes from "./routes/trello.route.js";
+import locationRoutes from "./routes/location.route.js";
+import pollRoutes from "./routes/poll.route.js";
 
 import { server, io } from "./libs/socket.js";
 
@@ -38,9 +40,8 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/story", storyRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/trello", trelloRoutes);
-
-// Socket.io
-io.attach(server);
+app.use("/api/location", locationRoutes);
+app.use("/api/polls", pollRoutes);
 
 const PORT = process.env.PORT || 5001;
 
