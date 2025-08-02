@@ -13,7 +13,8 @@ import {
     deleteGroup,
     getGroupMembers,
     updateMemberRole,
-    toggleMemberChat
+    toggleMemberChat,
+    updateMemberNickname
 } from "../controllers/group.controller.js";
 
 const router = express.Router();
@@ -31,6 +32,9 @@ router.post("/:groupId/members", protectRoute, addMember);
 router.delete("/:groupId/members/:memberId", protectRoute, removeMember);
 router.put("/:groupId/members/:memberId/role", protectRoute, updateMemberRole);
 router.put("/:groupId/members/:memberId/chat", protectRoute, toggleMemberChat);
+
+// Đổi biệt danh thành viên
+router.put("/:groupId/nickname/:userId", protectRoute, updateMemberNickname);
 
 // Join/Leave group
 router.post("/join", protectRoute, joinGroupByCode);

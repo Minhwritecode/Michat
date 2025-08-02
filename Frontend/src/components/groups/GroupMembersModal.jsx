@@ -15,8 +15,11 @@ import {
 } from "lucide-react";
 import useGroupStore from "../../stores/useGroupStore";
 import { useAuthStore } from "../../stores/useAuthStore";
+import UserInfoSidebar from "../UserInfoSidebar";
+import toast from "react-hot-toast";
+import axiosInstance from "../../libs/axios";
 
-const GroupMembersModal = ({ isOpen, onClose, group }) => {
+const GroupMembersModal = ({ isOpen, onClose, group, groupMessages = [] }) => {
     const { authUser } = useAuthStore();
     const { 
         groupMembers, 
@@ -32,6 +35,12 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
     const [selectedMember, setSelectedMember] = useState(null);
     const [showAddMembers, setShowAddMembers] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState([]);
+    const [showUserInfo, setShowUserInfo] = useState(false);
+    const [selectedUserInfo, setSelectedUserInfo] = useState(null);
+    const [userMessages, setUserMessages] = useState([]);
+    const [nicknameLoading, setNicknameLoading] = useState(false);
+    const [nicknameHighlight, setNicknameHighlight] = useState(false);
+    const [selectedMemberNickname, setSelectedMemberNickname] = useState("");
 
     const isAdmin = useGroupStore.getState().isGroupAdmin(group?._id, authUser._id);
     const isOwner = useGroupStore.getState().isGroupOwner(group?._id, authUser._id);
@@ -76,7 +85,6 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
 
     const handleAddMembers = async () => {
         if (selectedUsers.length === 0) return;
-
         try {
             const userIds = selectedUsers.map(user => user._id);
             await addMembers(group._id, userIds);
@@ -116,9 +124,42 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
         return new Date(date).toLocaleDateString("vi-VN");
     };
 
+    // Khi click avatar, truyền nickname đúng
+    const handleAvatarClick = (member) => {
+        setSelectedUserInfo(member.user);
+        setSelectedMemberNickname(member.nickname || "");
+        // Lọc messages của user này trong group
+        const msgs = groupMessages.filter(m => m.senderId === member.user._id);
+        setUserMessages(msgs);
+        setShowUserInfo(true);
+    };
+
+    // Hàm đổi biệt danh thành viên (chỉ admin/owner)
+    const handleUpdateMemberNickname = async (newNickname) => {
+        if (!selectedUserInfo || !group?._id) return;
+        setNicknameLoading(true);
+        try {
+            await axiosInstance.put(`/groups/${group._id}/nickname/${selectedUserInfo._id}`, { nickname: newNickname });
+            // Cập nhật nickname trong groupMembers UI
+            const idx = groupMembers.findIndex(m => m.user._id === selectedUserInfo._id);
+            if (idx !== -1) {
+                groupMembers[idx].nickname = newNickname;
+            }
+            setSelectedMemberNickname(newNickname);
+            setNicknameHighlight(true);
+            setTimeout(() => setNicknameHighlight(false), 1200);
+            toast.success("Đã cập nhật biệt danh thành viên!");
+        } catch {
+            toast.error("Cập nhật biệt danh thất bại!");
+        } finally {
+            setNicknameLoading(false);
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
+        <>
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-base-100 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
                 {/* Header */}
@@ -192,7 +233,8 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
                                         <img
                                             src={member.user.avatar || "/avatar.png"}
                                             alt={member.user.fullName}
-                                            className="w-12 h-12 rounded-full object-cover"
+                                            className="w-12 h-12 rounded-full object-cover cursor-pointer"
+                                            onClick={() => handleAvatarClick(member)}
                                         />
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
@@ -205,21 +247,24 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
                                                     </span>
                                                 )}
                                             </div>
-                                                                            <div className="flex items-center gap-2">
-                                    {getRoleBadge(member)}
-                                    {!member.canChat && (
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                            <MessageSquareOff size={10} />
-                                            Bị cấm chat
-                                        </span>
-                                    )}
-                                    <span className="text-xs text-base-content/60">
-                                        Tham gia {formatJoinDate(member.joinedAt)}
-                                    </span>
-                                </div>
+                                            <div className="flex items-center gap-2">
+                                                {getRoleBadge(member)}
+                                                {!member.canChat && (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                        <MessageSquareOff size={10} />
+                                                        Bị cấm chat
+                                                    </span>
+                                                )}
+                                                <span className="text-xs text-base-content/60">
+                                                    Tham gia {formatJoinDate(member.joinedAt)}
+                                                </span>
+                                            </div>
+                                            {/* Hiển thị biệt danh nếu có */}
+                                            {member.nickname && (
+                                                <div className="text-xs text-primary mt-1 italic">Biệt danh: {member.nickname}</div>
+                                            )}
                                         </div>
                                     </div>
-                                    
                                     {isAdmin && member.user._id !== authUser._id && (
                                         <button
                                             onClick={() => setSelectedMember(member)}
@@ -241,7 +286,6 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
                             <h3 className="font-bold text-lg mb-4">
                                 Tùy chọn cho {selectedMember.user.fullName}
                             </h3>
-                            
                             <div className="space-y-2">
                                 {selectedMember.role !== "admin" && isOwner && (
                                     <button
@@ -252,7 +296,6 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
                                         Thăng làm quản trị viên
                                     </button>
                                 )}
-                                
                                 {selectedMember.role === "admin" && isOwner && (
                                     <button
                                         onClick={() => handleUpdateRole(selectedMember.user._id, "member")}
@@ -262,12 +305,9 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
                                         Hạ xuống thành viên
                                     </button>
                                 )}
-                                
                                 <button
                                     onClick={() => handleToggleChat(selectedMember.user._id)}
-                                    className={`btn btn-outline w-full justify-start ${
-                                        selectedMember.canChat ? 'btn-warning' : 'btn-success'
-                                    }`}
+                                    className={`btn btn-outline w-full justify-start ${selectedMember.canChat ? 'btn-warning' : 'btn-success'}`}
                                 >
                                     {selectedMember.canChat ? (
                                         <>
@@ -281,7 +321,6 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
                                         </>
                                     )}
                                 </button>
-                                
                                 <button
                                     onClick={() => {
                                         // TODO: Implement private message
@@ -292,7 +331,6 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
                                     <Send size={16} />
                                     Nhắn tin riêng
                                 </button>
-                                
                                 <button
                                     onClick={() => handleRemoveMember(selectedMember.user._id)}
                                     className="btn btn-outline btn-error w-full justify-start"
@@ -301,7 +339,6 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
                                     Xóa khỏi nhóm
                                 </button>
                             </div>
-                            
                             <div className="mt-4 pt-4 border-t border-base-300">
                                 <button
                                     onClick={() => setSelectedMember(null)}
@@ -313,8 +350,7 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
                         </div>
                     </div>
                 )}
-
-                {/* Add Members Modal */}
+                {/* Add Members Modal giữ nguyên */}
                 {showAddMembers && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                         <div className="bg-base-100 rounded-lg p-6 w-96">
@@ -363,6 +399,18 @@ const GroupMembersModal = ({ isOpen, onClose, group }) => {
                 )}
             </div>
         </div>
+        <UserInfoSidebar
+          user={selectedUserInfo}
+          messages={userMessages}
+          open={showUserInfo}
+          onClose={() => setShowUserInfo(false)}
+          onUpdateNickname={isAdmin ? handleUpdateMemberNickname : undefined}
+          chatInfo={{ startedAt: userMessages.length > 0 ? userMessages[0]?.createdAt : null, totalMessages: userMessages.length }}
+          nickname={selectedMemberNickname}
+          loading={nicknameLoading}
+          highlight={nicknameHighlight}
+        />
+        </>
     );
 };
 

@@ -1,11 +1,11 @@
 import { useChatStore } from "../../stores/useChatStore";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import ChatHeader from "../chat/ChatHeader";
 import MessageInput from "../messages/MessageInput";
 import MessageSkeleton from "../skeletons/MessageSkeleton";
 import Message from "../messages/Message";
 import { useAuthStore } from "../../stores/useAuthStore";
-import { Phone, Video } from "lucide-react";
+import { Phone, Video, ChevronDown } from "lucide-react";
 import CallModal from "../CallModal";
 import { createPeerConnection, getUserMedia, stopStream } from "../../libs/webrtc";
 import toast from "react-hot-toast";
@@ -21,6 +21,7 @@ const ChatContainer = () => {
     } = useChatStore();
     const { authUser, socket } = useAuthStore();
     const messageEndRef = useRef(null);
+    const messageListRef = useRef(null);
     const [replyToMessage, setReplyToMessage] = useState(null);
     const [editingMessage, setEditingMessage] = useState(null);
     const [callOpen, setCallOpen] = useState(false);
@@ -31,6 +32,8 @@ const ChatContainer = () => {
     const [audioEnabled, setAudioEnabled] = useState(true);
     const [localStream, setLocalStream] = useState(null);
     const [remoteStream, setRemoteStream] = useState(null);
+    const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+    const [isScrolling, setIsScrolling] = useState(false);
     const pcRef = useRef(null);
     const remoteUserRef = useRef(null);
 
@@ -40,13 +43,46 @@ const ChatContainer = () => {
         return () => unsubscribeFromMessages();
     }, [selectedUser._id, getMessages, subscribeToMessages, unsubscribeFromMessages]);
 
-    useEffect(() => {
-        if (messageEndRef.current && messages) {
-            messageEndRef.current.scrollIntoView({ behavior: "smooth" });
+    // Smooth scroll to bottom with animation
+    const scrollToBottom = useCallback((behavior = "smooth") => {
+        if (messageEndRef.current) {
+            messageEndRef.current.scrollIntoView({ 
+                behavior, 
+                block: "end" 
+            });
         }
-    }, [messages]);
+    }, []);
 
-    // WebRTC Call handlers
+    // Auto scroll to bottom when new messages arrive
+    useEffect(() => {
+        if (messages && messages.length > 0) {
+            const messageList = messageListRef.current;
+            if (messageList) {
+                const isNearBottom = messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 100;
+                if (isNearBottom) {
+                    scrollToBottom();
+                }
+            }
+        }
+    }, [messages, scrollToBottom]);
+
+    // Handle scroll events
+    const handleScroll = useCallback(() => {
+        if (!messageListRef.current) return;
+        
+        const messageList = messageListRef.current;
+        const isNearBottom = messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 100;
+        setShowScrollToBottom(!isNearBottom);
+        
+        // Debounce scroll indicator
+        setIsScrolling(true);
+        clearTimeout(scrollTimeout.current);
+        scrollTimeout.current = setTimeout(() => setIsScrolling(false), 150);
+    }, []);
+
+    const scrollTimeout = useRef(null);
+
+    // WebRTC Call handlers (giữ nguyên)
     useEffect(() => {
         if (!socket) return;
 
@@ -220,10 +256,17 @@ const ChatContainer = () => {
 
     if (isMessagesLoading) {
         return (
-            <div className="flex-1 flex flex-col overflow-auto">
+            <div className="flex-1 flex flex-col overflow-hidden">
                 <ChatHeader />
-                <MessageSkeleton />
-                <MessageInput />
+                <div className="flex-1 overflow-y-auto">
+                    <MessageSkeleton />
+                </div>
+                <MessageInput
+                    replyTo={replyToMessage}
+                    editingMessage={editingMessage}
+                    onCancelReply={handleCancelReply}
+                    onCancelEdit={handleCancelEdit}
+                />
             </div>
         );
     }
@@ -251,61 +294,92 @@ const ChatContainer = () => {
     };
 
     return (
-        <div className="relative">
+        <div className="flex-1 flex flex-col overflow-hidden relative">
             <ChatHeader />
 
-            {/* Reply Preview */}
-            {replyToMessage && (
-                <div className="p-3 bg-base-200 border-b flex items-center justify-between">
-                    <div className="flex-1">
-                        <div className="text-sm font-semibold">Replying to:</div>
-                        <div className="text-sm opacity-70 truncate">{replyToMessage.text}</div>
+            {/* Reply/Edit Preview with smooth animation */}
+            {(replyToMessage || editingMessage) && (
+                <div className="bg-base-200 border-b border-base-300 p-3 animate-slide-down">
+                    <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-primary">
+                                {replyToMessage ? "Replying to:" : "Editing message:"}
+                            </div>
+                            <div className="text-sm opacity-70 truncate">
+                                {replyToMessage?.text || editingMessage?.text}
+                            </div>
+                        </div>
+                        <button 
+                            onClick={replyToMessage ? handleCancelReply : handleCancelEdit}
+                            className="btn btn-circle btn-xs btn-ghost ml-2 flex-shrink-0"
+                        >
+                            ×
+                        </button>
                     </div>
-                    <button onClick={handleCancelReply} className="btn btn-circle btn-xs">×</button>
                 </div>
             )}
 
-            {/* Edit Preview */}
-            {editingMessage && (
-                <div className="p-3 bg-base-200 border-b flex items-center justify-between">
-                    <div className="flex-1">
-                        <div className="text-sm font-semibold">Editing message:</div>
-                        <div className="text-sm opacity-70 truncate">{editingMessage.text}</div>
-                    </div>
-                    <button onClick={handleCancelEdit} className="btn btn-circle btn-xs">×</button>
-                </div>
-            )}
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((message) => (
-                    <Message
+            {/* Message List with optimized scroll */}
+            <div 
+                ref={messageListRef}
+                className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+                onScroll={handleScroll}
+                style={{ scrollBehavior: 'smooth' }}
+            >
+                {messages.map((message, index) => (
+                    <div
                         key={message._id}
-                        message={message}
-                        onReply={handleReply}
-                        onEdit={handleEdit}
-                        onForward={handleForward}
-                    />
+                        className={`animate-fade-in-up`}
+                        style={{ 
+                            animationDelay: `${Math.min(index * 50, 500)}ms`,
+                            animationFillMode: 'both'
+                        }}
+                    >
+                        <Message
+                            message={message}
+                            onReply={handleReply}
+                            onEdit={handleEdit}
+                            onForward={handleForward}
+                        />
+                    </div>
                 ))}
                 <div ref={messageEndRef} />
             </div>
 
-            <MessageInput
-                replyTo={replyToMessage}
-                editingMessage={editingMessage}
-                onCancelReply={handleCancelReply}
-                onCancelEdit={handleCancelEdit}
-            />
+            {/* Scroll to bottom button */}
+            {showScrollToBottom && (
+                <button
+                    onClick={() => scrollToBottom()}
+                    className={`fixed bottom-20 right-4 btn btn-circle btn-primary shadow-lg transition-all duration-300 z-20 ${
+                        isScrolling ? 'scale-110' : 'scale-100'
+                    }`}
+                    title="Scroll to bottom"
+                >
+                    <ChevronDown size={20} />
+                </button>
+            )}
 
+            {/* Message Input */}
+            <div className="border-t border-base-300 bg-base-100">
+                <MessageInput
+                    replyTo={replyToMessage}
+                    editingMessage={editingMessage}
+                    onCancelReply={handleCancelReply}
+                    onCancelEdit={handleCancelEdit}
+                />
+            </div>
+
+            {/* Call buttons - responsive */}
             <div className="flex gap-2 absolute top-2 right-2 z-10">
                 <button
-                    className="btn btn-sm btn-circle btn-primary"
+                    className="btn btn-sm btn-circle btn-primary shadow-lg hover:scale-105 transition-transform duration-200"
                     title="Gọi thoại"
                     onClick={() => startCall("voice")}
                 >
                     <Phone size={18} />
                 </button>
                 <button
-                    className="btn btn-sm btn-circle btn-primary"
+                    className="btn btn-sm btn-circle btn-primary shadow-lg hover:scale-105 transition-transform duration-200"
                     title="Gọi video"
                     onClick={() => startCall("video")}
                 >

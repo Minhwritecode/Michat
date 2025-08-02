@@ -1,6 +1,7 @@
 import { THEMES } from "../constants";
 import { useThemeStore } from "../stores/useThemeStore";
 import { Send } from "lucide-react";
+import StoryHistory from "../components/stories/StoryHistory";
 
 const PREVIEW_MESSAGES = [
     { id: 1, content: "Hey! How's it going?", isSent: false },
@@ -96,6 +97,11 @@ const SettingsPage = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Story History Section */}
+                <div className="w-full">
+                    <StoryHistory />
                 </div>
             </div>
         </div>

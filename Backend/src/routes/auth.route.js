@@ -1,5 +1,5 @@
 import express from "express";
-import { checkAuth, login, logout, signup, updateProfile, addFriend, acceptFriendRequest, rejectFriendRequest, cancelFriendRequest, getFriendsAndRequests, unfriend, updateUserLabel, getUserProfile, toggleFamilyMember, getUsersWithUnreadCount } from "../controllers/auth.controller.js";
+import { checkAuth, login, logout, signup, updateProfile, addFriend, acceptFriendRequest, rejectFriendRequest, cancelFriendRequest, getFriendsAndRequests, unfriend, updateUserLabel, getUserProfile, toggleFamilyMember, getUsersWithUnreadCount, updateNickname } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
@@ -10,6 +10,7 @@ router.post("/logout", logout);
 
 router.put("/update-profile", protectRoute, updateProfile);
 router.put("/label/:userId", protectRoute, updateUserLabel);
+router.put("/nickname", protectRoute, updateNickname);
 
 router.post("/add-friend/:userId", protectRoute, addFriend);
 router.post("/accept-friend/:userId", protectRoute, acceptFriendRequest);

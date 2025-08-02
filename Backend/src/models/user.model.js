@@ -36,6 +36,11 @@ const userSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User"
         }],
+        // Thêm trường nickname cho user
+        nickname: {
+            type: String,
+            default: ""
+        },
     },
     { timestamps: true }
 );

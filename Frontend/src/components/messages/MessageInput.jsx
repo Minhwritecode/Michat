@@ -16,7 +16,8 @@ import {
     AtSign,
     MapPin,
     BarChart3,
-    Bot
+    Bot,
+    Plus
 } from "lucide-react";
 import EmojiPicker from "../emoji/EmojiPicker";
 import GifPicker from "../emoji/GifPicker";
@@ -50,6 +51,7 @@ const MessageInput = ({
     const fileInputRef = useRef(null);
     const { sendMessage, messages } = useChatStore();
     const [showBotModal, setShowBotModal] = useState(false);
+    const [showActions, setShowActions] = useState(false);
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
@@ -201,7 +203,7 @@ const MessageInput = ({
                 </div>
             )}
 
-            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+            <form onSubmit={handleSendMessage} className="flex items-center gap-2 relative">
                 <div className="flex-1 flex gap-2">
                     <input
                         type="text"
@@ -233,112 +235,62 @@ const MessageInput = ({
                         ref={fileInputRef}
                         onChange={handleFileChange}
                     />
+                </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-1">
-                        <button
-                            type="button"
-                            className={`btn btn-circle btn-sm ${attachments.length > 0 ? "text-emerald-500" : "text-zinc-400"}`}
-                            onClick={() => fileInputRef.current?.click()}
-                            title="Attach files"
-                        >
+                {/* Nút + để mở tiện ích */}
+                <div className="relative">
+                    <button
+                        type="button"
+                        className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200"
+                        onClick={() => setShowActions(v => !v)}
+                        tabIndex={-1}
+                        aria-label="Tiện ích"
+                    >
+                        <Plus size={22} />
+                    </button>
+                    {/* Popup tiện ích */}
+                    <div className={`absolute left-12 top-1/2 -translate-y-1/2 flex gap-2 bg-base-100 shadow-lg rounded-full px-3 py-2 border border-base-200 transition-all duration-300 z-20 ${showActions ? 'opacity-100 pointer-events-auto translate-x-0' : 'opacity-0 pointer-events-none -translate-x-4'}`} style={{minWidth: 0}}>
+                        <button type="button" className="btn btn-circle btn-sm" title="Đính kèm file" onClick={() => {fileInputRef.current?.click(); setShowActions(false);}}>
                             <Paperclip size={18} />
                         </button>
-
-                        <button
-                            type="button"
-                            className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200 relative"
-                            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                            title="Emoji"
-                        >
+                        <button type="button" className="btn btn-circle btn-sm" title="Emoji" onClick={() => {setShowEmojiPicker(!showEmojiPicker); setShowActions(false);}}>
                             <Smile size={18} />
-                            {showEmojiPicker && (
-                                <EmojiPicker
-                                    onEmojiClick={handleEmojiClick}
-                                    onClose={() => setShowEmojiPicker(false)}
-                                />
-                            )}
                         </button>
-
-                        <button
-                            type="button"
-                            className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200 relative"
-                            onClick={() => setShowGifPicker(!showGifPicker)}
-                            title="GIF"
-                        >
+                        <button type="button" className="btn btn-circle btn-sm" title="GIF" onClick={() => {setShowGifPicker(!showGifPicker); setShowActions(false);}}>
                             <Image size={18} />
-                            {showGifPicker && (
-                                <GifPicker
-                                    onGifSelect={handleGifSelect}
-                                    onClose={() => setShowGifPicker(false)}
-                                />
-                            )}
                         </button>
-
-                        <button
-                            type="button"
-                            className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200"
-                            onClick={() => setShowVoiceRecorder(!showVoiceRecorder)}
-                            title="Voice message"
-                        >
+                        <button type="button" className="btn btn-circle btn-sm" title="Ghi âm" onClick={() => {setShowVoiceRecorder(!showVoiceRecorder); setShowActions(false);}}>
                             <Mic size={18} />
                         </button>
-
-                        <button
-                            type="button"
-                            className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200"
-                            onClick={() => setShowMessageSearch(true)}
-                            title="Search messages"
-                        >
+                        <button type="button" className="btn btn-circle btn-sm" title="Tìm kiếm tin nhắn" onClick={() => {setShowMessageSearch(true); setShowActions(false);}}>
                             <Search size={18} />
                         </button>
-
-                        {/* Location Share Button */}
-                        <button
-                            type="button"
-                            className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200"
-                            onClick={() => setShowLocationShare(true)}
-                            title="Share location"
-                        >
+                        <button type="button" className="btn btn-circle btn-sm" title="Chia sẻ vị trí" onClick={() => {setShowLocationShare(true); setShowActions(false);}}>
                             <MapPin size={18} />
                         </button>
-
-                        {/* Create Poll Button (only for groups) */}
                         {group && (
-                            <button
-                                type="button"
-                                className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200"
-                                onClick={() => setShowCreatePoll(true)}
-                                title="Create poll"
-                            >
+                            <button type="button" className="btn btn-circle btn-sm" title="Tạo poll" onClick={() => {setShowCreatePoll(true); setShowActions(false);}}>
                                 <BarChart3 size={18} />
                             </button>
                         )}
-
-                        <button
-                            type="button"
-                            className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200"
-                            onClick={() => setShowBotModal(true)}
-                            title="Trợ lý AI"
-                        >
+                        <button type="button" className="btn btn-circle btn-sm" title="Trợ lý AI" onClick={() => {setShowBotModal(true); setShowActions(false);}}>
                             <Bot size={18} />
                         </button>
-
+                        {/* Tích hợp khác */}
                         <IntegrationsMenu
                             onFilePick={(file) => {
-                                // Handle file pick from integrations
                                 if (file.name) {
                                     setText(prev => prev + `\n📎 ${file.name}: ${file.url || file.link || file.id}`);
                                 }
                             }}
                             onTaskCreate={(task) => {
-                                // Handle task creation from integrations
                                 setText(prev => prev + `\n📋 Task Trello: ${task.title}`);
                             }}
                         />
                     </div>
                 </div>
 
+                {/* Nút gửi luôn hiển thị */}
                 <button
                     type="submit"
                     className="btn btn-sm btn-circle"

@@ -3,6 +3,8 @@ import { X } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import { useChatStore } from "../../stores/useChatStore";
 import UserInfoSidebar from "../UserInfoSidebar";
+import toast from "react-hot-toast";
+import axiosInstance from "../../libs/axios";
 
 const ChatHeader = () => {
   const { selectedUser, setSelectedUser, messages } = useChatStore();
@@ -19,6 +21,17 @@ const ChatHeader = () => {
   const chatInfo = {
     startedAt: userMessages.length > 0 ? userMessages[0].createdAt : null,
     totalMessages: userMessages.length,
+  };
+
+  // Hàm cập nhật biệt danh
+  const handleUpdateNickname = async (newNickname) => {
+    try {
+      await axiosInstance.put("/auth/nickname", { nickname: newNickname });
+      setNickname(newNickname);
+      toast.success("Đã cập nhật biệt danh!");
+    } catch {
+      toast.error("Cập nhật biệt danh thất bại!");
+    }
   };
 
   return (
@@ -51,7 +64,7 @@ const ChatHeader = () => {
         messages={userMessages}
         open={showInfo}
         onClose={() => setShowInfo(false)}
-        onUpdateNickname={setNickname}
+        onUpdateNickname={handleUpdateNickname}
         chatInfo={chatInfo}
         nickname={nickname}
       />

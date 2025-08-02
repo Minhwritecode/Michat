@@ -550,3 +550,25 @@ export const toggleMemberChat = async (req, res, next) => {
         next(error);
     }
 };
+
+// Đổi biệt danh thành viên trong nhóm
+export const updateMemberNickname = async (req, res) => {
+    try {
+        const { groupId, userId } = req.params;
+        const { nickname } = req.body;
+        const currentUserId = req.user._id;
+        if (typeof nickname !== "string" || nickname.length > 30) {
+            return res.status(400).json({ message: "Biệt danh không hợp lệ" });
+        }
+        const group = await Group.findById(groupId);
+        if (!group) return res.status(404).json({ message: "Nhóm không tồn tại" });
+        if (!group.isAdmin(currentUserId)) return res.status(403).json({ message: "Bạn không có quyền đổi biệt danh thành viên" });
+        const member = group.members.find(m => m.user.toString() === userId);
+        if (!member) return res.status(404).json({ message: "Thành viên không tồn tại" });
+        member.nickname = nickname;
+        await group.save();
+        res.status(200).json({ nickname });
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi cập nhật biệt danh thành viên" });
+    }
+};

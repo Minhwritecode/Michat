@@ -58,6 +58,11 @@ const groupSchema = new mongoose.Schema({
         isActive: {
             type: Boolean,
             default: true
+        },
+        // Thêm trường nickname cho từng thành viên
+        nickname: {
+            type: String,
+            default: ""
         }
     }],
     settings: {

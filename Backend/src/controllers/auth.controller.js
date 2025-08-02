@@ -366,3 +366,22 @@ export const getUsersWithUnreadCount = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 };
+
+// Cập nhật biệt danh cá nhân
+export const updateNickname = async (req, res) => {
+    try {
+        const { nickname } = req.body;
+        const userId = req.user._id;
+        if (typeof nickname !== "string" || nickname.length > 30) {
+            return res.status(400).json({ message: "Biệt danh không hợp lệ" });
+        }
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { nickname },
+            { new: true }
+        );
+        res.status(200).json({ nickname: user.nickname });
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi cập nhật biệt danh" });
+    }
+};

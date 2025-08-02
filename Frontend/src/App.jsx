@@ -6,8 +6,6 @@ import LoginPage from "./pages/LoginPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import GroupsPage from "./pages/GroupsPage";
-import CreateStory from "./components/stories/CreateStory";
-import StoryList from "./components/stories/StoryList";
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./stores/useAuthStore";
@@ -50,10 +48,6 @@ const App = () => {
       </Routes>
 
       <Toaster />
-      <div className="w-full flex flex-col items-center bg-base-200 py-6">
-        <CreateStory onCreated={() => window.location.reload()} />
-        <StoryList />
-      </div>
     </div>
   );
 };
