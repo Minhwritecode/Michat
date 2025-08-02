@@ -20,6 +20,9 @@ export default defineConfig({
         target: 'http://localhost:5001',
         changeOrigin: true
       }
+    },
+    headers: {
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; worker-src 'self' blob:; connect-src 'self' https: ws: wss:;"
     }
   }
 });

@@ -24,14 +24,33 @@
    cd Backend && npm start
    ```
 
+## Frontend Deployment trên Render
+
+### Các bước cần thiết:
+
+1. **Cấu hình Environment Variables trên Render:**
+   - `VITE_API_URL`: URL của backend (ví dụ: https://michat-backend.onrender.com)
+
+2. **Build Command:**
+   ```
+   cd Frontend && npm install && npm run build
+   ```
+
+3. **Static Publish Path:**
+   ```
+   Frontend/dist
+   ```
+
 ### Các thay đổi đã thực hiện:
 
 1. **Sửa start script** trong `package.json` về `node src/index.js`
 2. **Sửa socket.js** để không tạo app mới, chỉ tạo server
 3. **Sửa index.js** để attach app vào server từ socket.js
-4. **Giữ nguyên ES modules** và tất cả dependencies
+4. **Thêm CSP headers** để fix lỗi Content Security Policy
+5. **Cấu hình render.yaml** cho cả Frontend và Backend
 
 ### Lưu ý:
 - Sử dụng Node.js version 18+ 
 - Đảm bảo tất cả environment variables đã được cấu hình
-- Kiểm tra MongoDB connection 
+- Kiểm tra MongoDB connection
+- CSP headers đã được thêm để fix lỗi blob và data URLs 
