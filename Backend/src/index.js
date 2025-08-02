@@ -16,7 +16,7 @@ import trelloRoutes from "./routes/trello.route.js";
 import locationRoutes from "./routes/location.route.js";
 import pollRoutes from "./routes/poll.route.js";
 
-import { server, io } from "./libs/socket.js";
+import { initSocket } from "./libs/socket.js";
 
 dotenv.config();
 
@@ -134,6 +134,8 @@ cloudinary.api.ping()
 // ======================
 // WebSocket Configuration
 // ======================
+const { io, server } = initSocket(app);
+
 if (isProduction) {
     io.engine.opts.transports = ["websocket"];
     io.engine.opts.perMessageDeflate = false;
@@ -251,7 +253,7 @@ app.use("*", (req, res) => {
 // ======================
 // Server Initialization
 // ======================
-server.on("request", app);
+// server.on("request", app); // KHÔNG cần nữa, đã truyền app vào initSocket
 
 const startServer = async () => {
     try {

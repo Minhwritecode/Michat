@@ -9,22 +9,25 @@ const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/r
 const GoogleDrivePicker = ({ isOpen, onClose, onPick }) => {
   useEffect(() => {
     if (!isOpen) return;
-    
-    const script = document.createElement("script");
-    script.src = "https://apis.google.com/js/api.js";
-    script.onload = () => {
+    // Chỉ load script nếu chưa có
+    let script = document.getElementById("google-api-script");
+    if (!script) {
+      script = document.createElement("script");
+      script.id = "google-api-script";
+      script.src = "https://apis.google.com/js/api.js";
+      script.onload = () => {
+        if (window.gapi) {
+          window.gapi.load("client:picker", initPicker);
+        }
+      };
+      document.body.appendChild(script);
+    } else {
       if (window.gapi) {
         window.gapi.load("client:picker", initPicker);
       }
-    };
-    document.body.appendChild(script);
-    
-    return () => {
-      const existingScript = document.getElementById("google-api-script");
-      if (existingScript) {
-        document.body.removeChild(existingScript);
-      }
-    };
+    }
+    // Không xóa script để tránh reload lại nhiều lần
+    // Nếu cần cleanup, chỉ cleanup các event listener custom
   }, [isOpen]);
 
   const initPicker = () => {
@@ -38,7 +41,6 @@ const GoogleDrivePicker = ({ isOpen, onClose, onPick }) => {
         const view = new window.google.picker.DocsView()
           .setIncludeFolders(true)
           .setSelectFolderEnabled(false);
-        
         const picker = new window.google.picker.PickerBuilder()
           .addView(view)
           .setOAuthToken(window.gapi.auth.getToken().access_token)
@@ -56,13 +58,13 @@ const GoogleDrivePicker = ({ isOpen, onClose, onPick }) => {
         picker.setVisible(true);
       });
     }).catch(error => {
-      console.error("Google Picker error:", error);
+      // Log chi tiết lỗi
+      console.error("Google Picker error:", error, JSON.stringify(error));
       onClose();
     });
   };
 
   if (!isOpen) return null;
-  
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
       <div className="bg-base-100 rounded-xl shadow-lg p-6 w-full max-w-md relative flex flex-col items-center">

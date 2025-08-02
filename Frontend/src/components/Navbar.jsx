@@ -3,6 +3,7 @@ import { useAuthStore } from "../stores/useAuthStore";
 import { LogOut, MessageSquare, Settings, User, Users } from "lucide-react";
 import { useState } from "react";
 import CreateStory from "./stories/CreateStory";
+import Modal from "./stories/Modal";
 
 const Navbar = () => {
     const { logout, authUser } = useAuthStore();
@@ -24,18 +25,22 @@ const Navbar = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <button
-                            className="btn btn-sm btn-primary font-semibold"
-                            onClick={() => setShowCreateStory(true)}
-                        >
-                            + Tạo Story
-                        </button>
-                        <Link
-                            to={"/groups"}
-                            className={`btn btn-sm gap-2 transition-colors`}>
-                            <Users className="w-4 h-4" />
-                            <span className="hidden sm:inline">Nhóm</span>
-                        </Link>
+                        {authUser && (
+                            <>
+                                <button
+                                    className="btn btn-sm btn-primary font-semibold"
+                                    onClick={() => setShowCreateStory(true)}
+                                >
+                                    + Tạo Story
+                                </button>
+                                <Link
+                                    to={"/groups"}
+                                    className={`btn btn-sm gap-2 transition-colors`}>
+                                    <Users className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Nhóm</span>
+                                </Link>
+                            </>
+                        )}
                         <Link
                             to={"/settings"}
                             className={`btn btn-sm gap-2 transition-colors`}>
@@ -57,15 +62,10 @@ const Navbar = () => {
                     </div>
                 </div>
             </div>
-            {showCreateStory && (
-                <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-                    <div className="bg-base-100 rounded-xl shadow-lg p-4 relative w-full max-w-md mx-auto">
-                        <button className="absolute top-2 right-2 btn btn-sm btn-circle" onClick={() => setShowCreateStory(false)}>
-                            <span className="text-lg">×</span>
-                        </button>
-                        <CreateStory onCreated={() => setShowCreateStory(false)} />
-                    </div>
-                </div>
+            {authUser && showCreateStory && (
+                <Modal onClose={() => setShowCreateStory(false)}>
+                    <CreateStory onCreated={() => setShowCreateStory(false)} />
+                </Modal>
             )}
         </header>
     );
