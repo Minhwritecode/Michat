@@ -1,27 +1,24 @@
 {
   "name": "michat",
   "version": "1.0.0",
-  "description": "",
+  "description": "Michat - Real-time chat application",
   "main": "index.js",
   "scripts": {
-    "build": "npm install --prefix Backend && npm install --prefix Frontend && npm run build --prefix Frontend",
-    "start": "npm start --prefix Backend"
+    "build": "cd Backend && npm install",
+    "start": "cd Backend && npm start"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Minhwritecode/Michat.git"
   },
-  "keywords": [],
+  "keywords": ["chat", "messaging", "real-time"],
   "author": "",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/Minhwritecode/Michat/issues"
   },
   "homepage": "https://github.com/Minhwritecode/Michat#readme",
-  "dependencies": {
-    "react-icons": "^5.5.0"
-  },
-  "devDependencies": {
-    "@babel/plugin-transform-react-jsx": "^7.27.1"
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
