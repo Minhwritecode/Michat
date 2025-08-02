@@ -21,59 +21,84 @@ dotenv.config();
 
 const app = express();
 
+// ======================
 // Security Middlewares
-app.use(helmet());
-app.use(
-    helmet.contentSecurityPolicy({
+// ======================
+app.use(helmet({
+    contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: [
+                "'self'",
+                process.env.NODE_ENV === 'development' ? "'unsafe-inline'" : "",
+                process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : ""
+            ].filter(Boolean),
+            styleSrc: [
+                "'self'",
+                "'unsafe-inline'",
+                "https://fonts.googleapis.com"
+            ],
             imgSrc: [
                 "'self'",
                 "data:",
                 "blob:",
-                "https://res.cloudinary.com"
+                "https://res.cloudinary.com",
+                "https://*.cloudinary.com"
             ],
             connectSrc: [
                 "'self'",
                 process.env.FRONTEND_URL || "http://localhost:5173",
-                "ws://" + (process.env.FRONTEND_URL?.replace(/https?:\/\//, "") || "localhost:5173")
+                `ws://${process.env.FRONTEND_URL?.replace(/https?:\/\//, "") || "localhost:5173"}`,
+                `wss://${process.env.FRONTEND_URL?.replace(/https?:\/\//, "") || "localhost:5173"}`
             ],
             workerSrc: ["'self'", "blob:"],
-            fontSrc: ["'self'", "data:"],
+            fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
+            frameSrc: ["'self'"],
+            mediaSrc: ["'self'", "data:", "blob:"],
+            objectSrc: ["'none'"],
+            baseUri: ["'self'"]
         },
-    })
-);
+        reportOnly: process.env.NODE_ENV === 'development'
+    },
+    crossOriginEmbedderPolicy: process.env.NODE_ENV === 'production',
+    crossOriginResourcePolicy: { policy: "same-site" }
+}));
 
 // Rate Limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 1000, // limit each IP to 1000 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
 });
 app.use(limiter);
 
+// ======================
 // Standard Middlewares
+// ======================
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(
-    cors({
-        origin: process.env.FRONTEND_URL || "http://localhost:5173",
-        credentials: true,
-    })
-);
+app.use(cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
-// Cloudinary Config
+// ======================
+// Third-party Services
+// ======================
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true
 });
 
+// ======================
 // Routes
+// ======================
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/story", storyRoutes);
@@ -82,34 +107,44 @@ app.use("/api/trello", trelloRoutes);
 app.use("/api/location", locationRoutes);
 app.use("/api/polls", pollRoutes);
 
+// ======================
 // Health Check
+// ======================
 app.get("/health", (req, res) => {
-    res.status(200).json({ status: "OK" });
-});
-
-// Error Handling Middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({
-        error: "Internal Server Error",
-        message: process.env.NODE_ENV === "development" ? err.message : undefined
+    res.status(200).json({
+        status: "OK",
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || "development"
     });
 });
 
-// Attach app to server
+// ======================
+// Error Handling
+// ======================
+app.use((err, req, res, next) => {
+    console.error(`[${new Date().toISOString()}] Error:`, err.stack);
+    res.status(err.status || 500).json({
+        error: err.message || "Internal Server Error",
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
+});
+
+// ======================
+// Server Setup
+// ======================
 server.on("request", app);
 
 const PORT = process.env.PORT || 5001;
 
-// Database Connection & Server Start
 connectDB()
     .then(() => {
         server.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
+            console.log(`[${new Date().toISOString()}] Server running on port ${PORT}`);
             console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+            console.log(`Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`);
         });
     })
     .catch((err) => {
-        console.error("Database connection failed:", err);
+        console.error(`[${new Date().toISOString()}] Database connection failed:`, err);
         process.exit(1);
     });
