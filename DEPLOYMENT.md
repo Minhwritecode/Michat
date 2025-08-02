@@ -26,14 +26,22 @@
 
 ### Các thay đổi đã thực hiện:
 
-1. **Sửa start script** trong `package.json` về `node src/index.js`
-2. **Sửa socket.js** để không tạo app mới, chỉ tạo server
-3. **Sửa index.js** để attach app vào server từ socket.js
-4. **Đơn giản hóa CSP meta tag** trong Frontend
-5. **Cấu hình render.yaml** chỉ cho Backend
+1. **Cải thiện logging** với emoji và thông tin chi tiết
+2. **Thêm health check endpoint** tại `/health`
+3. **Thêm root route** tại `/` để test API
+4. **Thêm 404 handler** cho routes không tồn tại
+5. **Cải thiện error handling** với stack trace trong development
+6. **Cấu hình FRONTEND_URL** trong render.yaml
+
+### Kiểm tra deployment:
+
+1. **Health check:** `https://your-backend.onrender.com/health`
+2. **Root endpoint:** `https://your-backend.onrender.com/`
+3. **API endpoints:** `https://your-backend.onrender.com/api/auth`
 
 ### Lưu ý:
 - Sử dụng Node.js version 18+ 
 - Đảm bảo tất cả environment variables đã được cấu hình
 - Kiểm tra MongoDB connection
-- Deploy Backend trước, sau đó deploy Frontend riêng 
+- Deploy Backend trước, sau đó deploy Frontend
+- Logs sẽ hiển thị thông tin chi tiết hơn 

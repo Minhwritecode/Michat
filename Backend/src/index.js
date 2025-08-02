@@ -114,7 +114,20 @@ app.get("/health", (req, res) => {
     res.status(200).json({
         status: "OK",
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "development"
+        environment: process.env.NODE_ENV || "development",
+        version: "1.0.0"
+    });
+});
+
+// ======================
+// Root Route
+// ======================
+app.get("/", (req, res) => {
+    res.status(200).json({
+        message: "Michat Backend API",
+        version: "1.0.0",
+        status: "running",
+        timestamp: new Date().toISOString()
     });
 });
 
@@ -130,6 +143,17 @@ app.use((err, req, res, next) => {
 });
 
 // ======================
+// 404 Handler
+// ======================
+app.use("*", (req, res) => {
+    res.status(404).json({
+        error: "Route not found",
+        path: req.originalUrl,
+        method: req.method
+    });
+});
+
+// ======================
 // Server Setup
 // ======================
 server.on("request", app);
@@ -139,12 +163,14 @@ const PORT = process.env.PORT || 5001;
 connectDB()
     .then(() => {
         server.listen(PORT, () => {
-            console.log(`[${new Date().toISOString()}] Server running on port ${PORT}`);
-            console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-            console.log(`Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`);
+            console.log(`[${new Date().toISOString()}] 🚀 Server running on port ${PORT}`);
+            console.log(`[${new Date().toISOString()}] 🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+            console.log(`[${new Date().toISOString()}] 🔗 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`);
+            console.log(`[${new Date().toISOString()}] 📊 Health check: http://localhost:${PORT}/health`);
+            console.log(`[${new Date().toISOString()}] ✅ MongoDB: Connected successfully`);
         });
     })
     .catch((err) => {
-        console.error(`[${new Date().toISOString()}] Database connection failed:`, err);
+        console.error(`[${new Date().toISOString()}] ❌ Database connection failed:`, err);
         process.exit(1);
     });
