@@ -4,8 +4,8 @@
   "description": "Michat - Real-time chat application",
   "main": "index.js",
   "scripts": {
-    "build": "cd Backend && npm install",
-    "start": "cd Backend && npm start"
+    "build": "npm install --prefix Backend && npm install --prefix Frontend && npm run build --prefix Frontend",
+    "start": "npm run start --prefix Backend"
   },
   "repository": {
     "type": "git",
