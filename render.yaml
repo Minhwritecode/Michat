@@ -20,4 +20,13 @@ services:
       - key: CLOUDINARY_API_SECRET
         sync: false
       - key: FRONTEND_URL
-        value: https://michat-frontend.onrender.com 
+        value: https://michat-frontend.onrender.com
+
+  - type: web
+    name: michat-frontend
+    env: static
+    buildCommand: cd Frontend && npm install && npm run build
+    staticPublishPath: Frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://michat-backend.onrender.com 

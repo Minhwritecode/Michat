@@ -24,6 +24,23 @@
    cd Backend && npm start
    ```
 
+## Frontend Deployment trên Render
+
+### Các bước cần thiết:
+
+1. **Cấu hình Environment Variables trên Render:**
+   - `VITE_API_URL`: URL của backend (ví dụ: https://michat-backend.onrender.com)
+
+2. **Build Command:**
+   ```
+   cd Frontend && npm install && npm run build
+   ```
+
+3. **Static Publish Path:**
+   ```
+   Frontend/dist
+   ```
+
 ### Các thay đổi đã thực hiện:
 
 1. **Cải thiện logging** với emoji và thông tin chi tiết
@@ -34,6 +51,8 @@
 6. **Cải thiện error handling** với stack trace trong development
 7. **Cấu hình FRONTEND_URL** trong render.yaml
 8. **Log environment variables** để debug
+9. **Sửa Frontend configuration** để sử dụng environment variables
+10. **Cấu hình render.yaml** cho cả Frontend và Backend
 
 ### Kiểm tra deployment:
 
@@ -59,4 +78,5 @@ Nếu FRONTEND_URL vẫn là localhost, hãy kiểm tra:
 - Kiểm tra MongoDB connection
 - Deploy Backend trước, sau đó deploy Frontend
 - Logs sẽ hiển thị thông tin chi tiết hơn
-- Favicon 404 error đã được fix 
+- Favicon 404 error đã được fix
+- Frontend sẽ sử dụng VITE_API_URL để kết nối với Backend 
