@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useChatStore } from "../../stores/useChatStore";
 import { 
     Image, 
@@ -33,6 +33,7 @@ import IntegrationsMenu from "../integrations/IntegrationsMenu";
 import clsx from "clsx";
 import EmojiGifStickerSuggest from "./EmojiGifStickerSuggest";
 import EmotionSelector from "./EmotionSelector";
+import useDraftStore from "../../stores/useDraftStore";
 
 const ACTIONS = [
   {
@@ -87,6 +88,40 @@ const MessageInput = ({
     const [suggestTrigger, setSuggestTrigger] = useState("");
     const inputRef = useRef(null);
     const [selectedEmotion, setSelectedEmotion] = useState("neutral");
+    const { saveDraft, getDraft, clearDraft } = useDraftStore();
+    const currentUserId = privateMessageTo?._id || group?._id;
+
+    // Load draft khi component mount hoặc user thay đổi
+    useEffect(() => {
+        if (currentUserId && !editingMessage) {
+            const draft = getDraft(currentUserId);
+            if (draft) {
+                setText(draft.text || "");
+                setAttachments(draft.attachments || []);
+            }
+        }
+    }, [currentUserId, getDraft, editingMessage]);
+
+    // Auto-save draft khi text hoặc attachments thay đổi
+    useEffect(() => {
+        if (currentUserId && !editingMessage) {
+            const draftData = {
+                text: text,
+                attachments: attachments
+            };
+            
+            // Debounce để tránh lưu quá nhiều
+            const timeoutId = setTimeout(() => {
+                if (text.trim() || attachments.length > 0) {
+                    saveDraft(currentUserId, draftData);
+                } else {
+                    clearDraft(currentUserId);
+                }
+            }, 1000);
+
+            return () => clearTimeout(timeoutId);
+        }
+    }, [text, attachments, currentUserId, editingMessage, saveDraft, clearDraft]);
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
@@ -192,14 +227,17 @@ const MessageInput = ({
                         size: att.size
                     })),
                     replyTo: replyTo?._id,
-                    emotion: selectedEmotion // Add emotion to message
+                    emotion: selectedEmotion
                 });
             }
 
-            // Clear form
+            // Clear form and draft
             setText("");
             setAttachments([]);
-            setSelectedEmotion("neutral"); // Reset emotion
+            setSelectedEmotion("neutral");
+            if (currentUserId) {
+                clearDraft(currentUserId);
+            }
             if (fileInputRef.current) fileInputRef.current.value = "";
         } catch (error) {
             console.error("Failed to send message:", error);

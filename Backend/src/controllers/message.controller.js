@@ -2,7 +2,7 @@ import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 
 import cloudinary from "../libs/cloudinary.js";
-import { getReceiverSocketId } from "../libs/socket.js";
+import { getReceiverSocketId, getIO } from "../libs/socket.js";
 
 export const getUsersForSidebar = async (req, res) => {
     try {
@@ -86,7 +86,8 @@ export const sendMessage = async (req, res) => {
         await newMessage.populate('senderId', 'fullName profilePic');
 
         const receiverSocketIds = getReceiverSocketId(receiverId);
-        if (receiverSocketIds && receiverSocketIds.length > 0) {
+        const io = getIO();
+        if (receiverSocketIds && receiverSocketIds.length > 0 && io) {
             receiverSocketIds.forEach(socketId => {
                 io.to(socketId).emit("newMessage", newMessage);
             });
@@ -228,14 +229,15 @@ export const forwardMessage = async (req, res) => {
         await newMessage.populate('senderId', 'fullName profilePic');
 
         // Send real-time notification
-        if (targetType === 'user') {
+        const io = getIO();
+        if (targetType === 'user' && io) {
             const receiverSocketIds = getReceiverSocketId(targetId);
             if (receiverSocketIds && receiverSocketIds.length > 0) {
                 receiverSocketIds.forEach(socketId => {
                     io.to(socketId).emit("newMessage", newMessage);
                 });
             }
-        } else if (targetType === 'group') {
+        } else if (targetType === 'group' && io) {
             // Emit to group members (implement group socket logic)
             io.to(`group_${targetId}`).emit("newMessage", newMessage);
         }
@@ -243,6 +245,43 @@ export const forwardMessage = async (req, res) => {
         res.status(201).json(newMessage);
     } catch (error) {
         console.log("Error in forwardMessage controller: ", error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+// Delete message
+export const deleteMessage = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const userId = req.user._id;
+
+        const message = await Message.findById(messageId);
+        if (!message) {
+            return res.status(404).json({ error: "Message not found" });
+        }
+
+        // Kiểm tra quyền xóa (chỉ owner mới được xóa)
+        if (message.senderId.toString() !== userId.toString()) {
+            return res.status(403).json({ error: "You can only delete your own messages" });
+        }
+
+        await Message.findByIdAndDelete(messageId);
+
+        // Emit real-time notification
+        const io = getIO();
+        if (io) {
+            const receiverSocketIds = getReceiverSocketId(message.receiverId.toString());
+            const senderSocketIds = getReceiverSocketId(message.senderId.toString());
+            
+            const allSocketIds = [...(receiverSocketIds || []), ...(senderSocketIds || [])];
+            allSocketIds.forEach(socketId => {
+                io.to(socketId).emit("messageDeleted", { messageId });
+            });
+        }
+
+        res.json({ message: "Message deleted successfully" });
+    } catch (error) {
+        console.log("Error in deleteMessage controller: ", error.message);
         res.status(500).json({ error: "Internal server error" });
     }
 };

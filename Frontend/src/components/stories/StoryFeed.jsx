@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Heart, MessageCircle, Share2, Eye, Clock } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import toast from "react-hot-toast";
@@ -10,8 +10,8 @@ const StoryFeed = () => {
     const [showStoryModal, setShowStoryModal] = useState(false);
     const { authUser } = useAuthStore();
 
-    // Fetch tất cả stories còn hiệu lực
-    const fetchStories = async () => {
+    // Fetch tất cả stories còn hiệu lực - sử dụng useCallback
+    const fetchStories = useCallback(async () => {
         try {
             const res = await fetch("/story", { 
                 credentials: "include" 
@@ -25,11 +25,24 @@ const StoryFeed = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
-        fetchStories();
-    }, []);
+        let isMounted = true;
+        
+        const loadStories = async () => {
+            if (isMounted) {
+                await fetchStories();
+            }
+        };
+        
+        loadStories();
+        
+        // Cleanup function
+        return () => {
+            isMounted = false;
+        };
+    }, [fetchStories]);
 
     // Group stories by user
     const storiesByUser = stories.reduce((acc, story) => {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuthStore } from "../stores/useAuthStore";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { 
     Eye, 
     EyeOff, 
@@ -14,6 +14,7 @@ import {
     ArrowRight,
     CheckCircle
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 const SignUpPage = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -25,12 +26,48 @@ const SignUpPage = () => {
         confirmPassword: ""
     });
     const [focusedField, setFocusedField] = useState("");
-    const { login, isLoggingIn } = useAuthStore();
+    const { signup, isSigningUp } = useAuthStore();
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // Handle signup logic here
-        console.log("Sign up:", formData);
+        
+        // Validation
+        if (!formData.fullName.trim()) {
+            toast.error("Vui lòng nhập họ tên");
+            return;
+        }
+        
+        if (!formData.email.trim()) {
+            toast.error("Vui lòng nhập email");
+            return;
+        }
+        
+        if (!formData.password) {
+            toast.error("Vui lòng nhập mật khẩu");
+            return;
+        }
+        
+        if (formData.password.length < 6) {
+            toast.error("Mật khẩu phải có ít nhất 6 ký tự");
+            return;
+        }
+        
+        if (formData.password !== formData.confirmPassword) {
+            toast.error("Mật khẩu xác nhận không khớp");
+            return;
+        }
+
+        try {
+            await signup({
+                fullName: formData.fullName.trim(),
+                email: formData.email.trim(),
+                password: formData.password
+            });
+            navigate("/");
+        } catch (error) {
+            console.error("Signup error:", error);
+        }
     };
 
     return (
@@ -203,12 +240,12 @@ const SignUpPage = () => {
                                         type="submit" 
                                         className="btn btn-primary w-full h-14 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 animate-fade-in-up" 
                                         style={{ animationDelay: '0.4s' }}
-                                        disabled={isLoggingIn}
+                                        disabled={isSigningUp}
                                     >
-                                        {isLoggingIn ? (
+                                        {isSigningUp ? (
                                             <>
                                                 <Loader2 className="h-5 w-5 animate-spin" />
-                                                Loading...
+                                                Creating Account...
                                             </>
                                         ) : (
                                             <>

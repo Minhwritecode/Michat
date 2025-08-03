@@ -15,7 +15,8 @@ import {
     Globe,
     X,
     Users,
-    User
+    User,
+    Trash2
 } from "lucide-react";
 import toast from "react-hot-toast";
 import LinkPreview from "../LinkPreview";
@@ -115,6 +116,25 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
             setShowContextMenu(false);
         } catch {
             toast.error('Ghim tin nhắn thất bại!');
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!confirm("Bạn có chắc chắn muốn xóa tin nhắn này?")) return;
+        
+        try {
+            const response = await fetch(`/messages/${message._id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Failed to delete message');
+
+            toast.success('Đã xóa tin nhắn!');
+            setShowContextMenu(false);
+        } catch (error) {
+            console.error("Error deleting message:", error);
+            toast.error('Xóa tin nhắn thất bại!');
         }
     };
 
@@ -408,6 +428,16 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
                                     <Forward size={16} />
                                     <span>Forward</span>
                                 </button>
+
+                                {isOwnMessage && (
+                                    <button
+                                        onClick={handleDelete}
+                                        className="w-full text-left px-3 py-2 hover:bg-error/10 text-error rounded-lg flex items-center gap-3 transition-colors duration-150"
+                                    >
+                                        <Trash2 size={16} />
+                                        <span>Delete</span>
+                                    </button>
+                                )}
 
                                 {message.text && (
                                     <button

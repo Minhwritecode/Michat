@@ -3,9 +3,14 @@ import http from "http";
 
 // used to store online users
 const userSocketMap = {}; // {userId: [socketId1, socketId2, ...]}
+let ioInstance = null;
 
 export function getReceiverSocketId(userId) {
     return userSocketMap[userId] || [];
+}
+
+export function getIO() {
+    return ioInstance;
 }
 
 export function initSocket(app) {
@@ -18,6 +23,9 @@ export function initSocket(app) {
             credentials: true
         }
     });
+
+    // Store io instance globally
+    ioInstance = io;
 
     io.on("connection", (socket) => {
         console.log("A user connected", socket.id);

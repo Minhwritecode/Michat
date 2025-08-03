@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Trash2, Eye, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import toast from "react-hot-toast";
@@ -10,8 +10,8 @@ const StoryHistory = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const { authUser } = useAuthStore();
 
-    // Fetch stories của user hiện tại
-    const fetchUserStories = async () => {
+    // Fetch stories của user hiện tại - sử dụng useCallback để tránh re-create
+    const fetchUserStories = useCallback(async () => {
         try {
             const res = await fetch("/story/my-stories", { 
                 credentials: "include" 
@@ -25,11 +25,24 @@ const StoryHistory = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
-        fetchUserStories();
-    }, []);
+        let isMounted = true;
+        
+        const loadStories = async () => {
+            if (isMounted) {
+                await fetchUserStories();
+            }
+        };
+        
+        loadStories();
+        
+        // Cleanup function
+        return () => {
+            isMounted = false;
+        };
+    }, [fetchUserStories]);
 
     // Xóa story
     const handleDeleteStory = async (storyId) => {

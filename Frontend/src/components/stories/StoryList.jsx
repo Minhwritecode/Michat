@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Story from "./Story";
 import toast from "react-hot-toast";
 import Modal from "./Modal";
@@ -7,12 +7,28 @@ import CreateStory from "./CreateStory";
 const StoryList = () => {
     const [stories, setStories] = useState([]);
     const [showModal, setShowModal] = useState(false);
-    const fetchStories = async () => {
+    
+    const fetchStories = useCallback(async () => {
         const res = await fetch("/story", { credentials: "include" });
         const data = await res.json();
         setStories(data);
-    };
-    useEffect(() => { fetchStories(); }, []);
+    }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+        
+        const loadStories = async () => {
+            if (isMounted) {
+                await fetchStories();
+            }
+        };
+        
+        loadStories();
+        
+        return () => {
+            isMounted = false;
+        };
+    }, [fetchStories]);
 
     const handleReact = async (storyId, emoji) => {
         await fetch(`/story/${storyId}/react`, {

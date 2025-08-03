@@ -17,6 +17,7 @@
 - [Usage](#-usage)
 - [API Endpoints](#-api-endpoints)
 - [Socket.IO Events](#-socketio-events)
+- [Deployment](#-deployment)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -28,14 +29,49 @@
 - **Profile Management**: Update profile information and avatar
 - **Password Security**: Bcrypt hashing for secure password storage
 - **Session Management**: Cookie-based authentication
+- **Nickname System**: Personal and group member nicknames with editing capability
+- **User Labels**: Categorize users as family, friends, or strangers
+- **Nickname System**: Personal and group member nicknames with editing capability
+- **User Labels**: Categorize users as family, friends, or strangers
 
 ### 💬 Real-time Messaging
 
 - **Instant Messaging**: Real-time message delivery using Socket.IO
 - **Multi-tab Support**: Users can open multiple tabs and receive messages on all tabs
-- **Message Types**: Support for text messages and image sharing
+- **Message Types**: Support for text, images, videos, audio, documents, and GIFs
 - **Online Status**: Real-time online/offline user status
 - **Message History**: Persistent message storage in MongoDB
+- **Draft Messages**: Auto-save and restore unsent messages when switching conversations
+- **Message Reactions**: React to messages with emojis (like, love, laugh, etc.)
+- **Message Forwarding**: Forward messages to other users or groups
+- **Message Search**: Search through conversation history
+- **Message Translation**: Translate messages to different languages
+- **Message Pinning**: Pin important messages
+- **Message Editing**: Edit sent messages (own messages only)
+- **Message Deletion**: Delete messages with confirmation
+- **Read Receipts**: See when messages are read by recipients
+- **Typing Indicators**: Real-time typing status
+- **Draft Messages**: Auto-save and restore unsent messages when switching conversations
+- **Message Reactions**: React to messages with emojis (like, love, laugh, etc.)
+- **Message Forwarding**: Forward messages to other users or groups
+- **Message Search**: Search through conversation history
+- **Message Translation**: Translate messages to different languages
+- **Message Pinning**: Pin important messages
+- **Message Editing**: Edit sent messages (own messages only)
+- **Message Deletion**: Delete messages with confirmation
+- **Read Receipts**: See when messages are read by recipients
+- **Typing Indicators**: Real-time typing status
+
+### 🎨 Advanced Message Features
+
+- **Emotional Themes**: Select emotional themes for messages (happy, love, sad, angry, etc.)
+- **Smart Suggestions**: AI-powered message suggestions, emoji, GIF, and sticker recommendations
+- **Emoji/GIF/Sticker Picker**: Interactive picker with search and categories
+- **Voice Messages**: Record and send voice messages
+- **File Attachments**: Upload and share various file types
+- **Link Previews**: Automatic link previews for shared URLs
+- **Reply System**: Reply to specific messages with preview
+- **Message Context Menu**: Right-click for message actions
 
 ### 👥 Advanced Group Chats
 
@@ -45,15 +81,8 @@
 - **Private Messages**: Send direct messages to specific members within groups
 - **Invite System**: Generate and share invite codes for group access
 - **Privacy Levels**: Public, Private, and Read-only group types
-- **Polls & Surveys**: Create interactive polls with multiple options and real-time results
-- **Location Sharing**: Share current location with live tracking capabilities
-- **End-to-End Encryption**: Secure message encryption for privacy protection
-
-### 🤖 AI/Bot Integration
-
-- **Chatbot Support**: Integrate chatbots for FAQs, information, or simple tasks
-- **Smart Suggestions**: Provide quick replies, emoji, or GIF suggestions based on conversation context
-- **Auto-Translate**: Automatically translate messages to the recipient's language
+- **Group Nicknames**: Set and edit nicknames for group members
+- **Member Status**: Track member activity and permissions
 
 ### 📊 Polls & Surveys
 
@@ -62,6 +91,7 @@
 - **Poll Results**: Real-time display of poll results with percentages
 - **Poll Expiration**: Set expiration dates for polls
 - **Multiple Choice**: Support for single or multiple choice questions
+- **Poll Management**: Create, edit, and delete polls
 
 ### 📍 Location Sharing
 
@@ -70,21 +100,44 @@
 - **Location History**: View shared location history
 - **Nearby Places**: Find and share nearby places of interest
 - **Reverse Geocoding**: Convert coordinates to readable addresses
+- **Location Privacy**: Control location sharing permissions
 
-### 🔒 End-to-End Encryption (E2EE)
+### 📖 Story System
 
-- **Message Encryption**: AES-256-GCM encryption for message content
-- **Key Exchange**: RSA asymmetric encryption for secure key exchange
-- **Session Keys**: Unique session keys for each conversation
-- **Integrity Verification**: Message integrity checks to prevent tampering
-- **Fingerprint Verification**: Verify encryption keys to prevent man-in-the-middle attacks
+- **Story Creation**: Create stories with text and media content
+- **Story Viewing**: View stories from all users in horizontal carousel
+- **Story Reactions**: React to stories with emojis
+- **Story Replies**: Reply to stories with text
+- **Story Management**: View and delete your own stories
+- **Story Expiration**: Stories automatically expire after 24 hours
+- **Story History**: Browse your story history in Settings page
 
-### 🖥️ Screen Sharing
+### 📖 Story System
 
-- **Video Call Integration**: Screen sharing during video calls
-- **Multiple Streams**: Share screen while maintaining video/audio
-- **Quality Control**: Adjustable screen sharing quality
-- **Collaboration**: Perfect for presentations and remote collaboration
+- **Story Creation**: Create stories with text and media content
+- **Story Viewing**: View stories from all users in horizontal carousel
+- **Story Reactions**: React to stories with emojis
+- **Story Replies**: Reply to stories with text
+- **Story Management**: View and delete your own stories
+- **Story Expiration**: Stories automatically expire after 24 hours
+- **Story History**: Browse your story history in Settings page
+
+### 🤖 AI/Bot Integration
+
+- **Chatbot Support**: Integrate chatbots for FAQs, information, or simple tasks
+- **Smart Suggestions**: Provide quick replies, emoji, or GIF suggestions based on conversation context
+- **Auto-Translate**: Automatically translate messages to the recipient's language
+- **AI Assistant**: AI-powered chat assistant for help and information
+- **AI Assistant**: AI-powered chat assistant for help and information
+
+### 🎥 Video Calling
+
+- **Voice Calls**: Make voice calls to other users
+- **Video Calls**: Make video calls with camera and microphone
+- **Screen Sharing**: Share screen during video calls
+- **Call Controls**: Mute/unmute, enable/disable video, end call
+- **Call Notifications**: Incoming call notifications with accept/reject options
+- **WebRTC Integration**: Peer-to-peer communication for better quality
 
 ### 🔗 Third-Party Integrations
 
@@ -101,14 +154,20 @@
 - **Loading States**: Skeleton loading components for better UX
 - **Toast Notifications**: User-friendly notifications with react-hot-toast
 - **Modern Icons**: Lucide React icons for consistent design
+- **Smooth Animations**: CSS animations and transitions for better UX
+- **Glassmorphism**: Modern glass-like UI effects
+- **Gradient Backgrounds**: Beautiful gradient backgrounds and effects
 
 ### 🛠️ Technical Features
 
 - **State Management**: Zustand for efficient state management
-- **Image Upload**: Cloudinary integration for profile pictures
+- **Image Upload**: Cloudinary integration for profile pictures and media
 - **Real-time Updates**: Socket.IO for instant communication
 - **RESTful API**: Clean and well-structured API endpoints
 - **Error Handling**: Comprehensive error handling and validation
+- **Draft Persistence**: LocalStorage for draft message persistence
+- **Message Encryption**: Optional end-to-end encryption
+- **File Validation**: File type and size validation for uploads
 
 ## 🛠️ Tech Stack
 
@@ -123,8 +182,8 @@
 - **Socket.IO Client** - Real-time communication
 - **Axios** - HTTP client for API calls
 - **Lucide React** - Beautiful icons
-- **React Icons** - Icon library for third-party integrations
 - **React Hot Toast** - Toast notifications
+- **React Icons** - Icon library for third-party integrations
 
 ### Backend
 
@@ -157,13 +216,16 @@ Michat/
 │   │   └── avatar.png       # Default avatar
 │   ├── src/
 │   │   ├── components/      # Reusable UI components
-│   │   │   ├── ChatContainer.jsx
-│   │   │   ├── ChatHeader.jsx
-│   │   │   ├── MessageInput.jsx
-│   │   │   ├── Navbar.jsx
-│   │   │   ├── Sidebar.jsx
-│   │   │   ├── NoChatSelected.jsx
-│   │   │   ├── AuthImagePattern.jsx
+│   │   │   ├── chat/        # Chat components
+│   │   │   │   ├── ChatContainer.jsx
+│   │   │   │   └── ChatHeader.jsx
+│   │   │   ├── messages/    # Message components
+│   │   │   │   ├── Message.jsx
+│   │   │   │   ├── MessageInput.jsx
+│   │   │   │   ├── MessageSearch.jsx
+│   │   │   │   ├── MessageForward.jsx
+│   │   │   │   ├── EmotionSelector.jsx
+│   │   │   │   └── EmojiGifStickerSuggest.jsx
 │   │   │   ├── groups/      # Group chat components
 │   │   │   │   ├── GroupCard.jsx
 │   │   │   │   ├── GroupList.jsx
@@ -171,6 +233,12 @@ Michat/
 │   │   │   │   ├── CreateGroupModal.jsx
 │   │   │   │   ├── JoinGroupModal.jsx
 │   │   │   │   └── GroupMembersModal.jsx
+│   │   │   ├── stories/     # Story components
+│   │   │   │   ├── StoryFeed.jsx
+│   │   │   │   ├── StoryHistory.jsx
+│   │   │   │   ├── CreateStoryModal.jsx
+│   │   │   │   ├── Story.jsx
+│   │   │   │   └── StoryList.jsx
 │   │   │   ├── polls/       # Poll components
 │   │   │   │   ├── CreatePollModal.jsx
 │   │   │   │   └── PollCard.jsx
@@ -184,21 +252,38 @@ Michat/
 │   │   │   │   ├── TrelloTaskModal.jsx
 │   │   │   │   ├── DropboxChooser.jsx
 │   │   │   │   └── IntegrationsMenu.jsx
-│   │   │   └── skeletons/   # Loading skeleton components
+│   │   │   ├── video/       # Video call components
+│   │   │   │   ├── VideoCall.jsx
+│   │   │   │   └── ScreenShareButton.jsx
+│   │   │   ├── emoji/       # Emoji components
+│   │   │   │   ├── EmojiPicker.jsx
+│   │   │   │   └── GifPicker.jsx
+│   │   │   ├── skeletons/   # Loading skeleton components
+│   │   │   ├── Sidebar.jsx
+│   │   │   ├── Navbar.jsx
+│   │   │   ├── UserInfoSidebar.jsx
+│   │   │   ├── NoChatSelected.jsx
+│   │   │   ├── CallModal.jsx
+│   │   │   ├── VoiceRecorder.jsx
+│   │   │   ├── TypingIndicator.jsx
+│   │   │   └── LinkPreview.jsx
 │   │   ├── pages/           # Page components
 │   │   │   ├── HomePage.jsx
 │   │   │   ├── LoginPage.jsx
 │   │   │   ├── SignUpPage.jsx
 │   │   │   ├── ProfilePage.jsx
-│   │   │   └── SettingsPage.jsx
+│   │   │   ├── SettingsPage.jsx
+│   │   │   └── GroupsPage.jsx
 │   │   ├── stores/          # Zustand state stores
 │   │   │   ├── useAuthStore.js
 │   │   │   ├── useChatStore.js
 │   │   │   ├── useGroupStore.js
-│   │   │   └── useThemeStore.js
+│   │   │   ├── useThemeStore.js
+│   │   │   └── useDraftStore.js
 │   │   ├── libs/            # Utility libraries
 │   │   │   ├── axios.js
-│   │   │   └── utils.js
+│   │   │   ├── utils.js
+│   │   │   └── webrtc.js
 │   │   ├── constants/       # Application constants
 │   │   ├── App.jsx          # Main application component
 │   │   ├── main.jsx         # Application entry point
@@ -215,8 +300,7 @@ Michat/
 │   │   │   ├── group.controller.js
 │   │   │   ├── poll.controller.js
 │   │   │   ├── location.controller.js
-│   │   │   ├── bot.controller.js
-│   │   │   ├── translate.controller.js
+│   │   │   ├── story.controller.js
 │   │   │   └── trello.controller.js
 │   │   ├── models/          # MongoDB models
 │   │   │   ├── user.model.js
@@ -224,6 +308,7 @@ Michat/
 │   │   │   ├── group.model.js
 │   │   │   ├── poll.model.js
 │   │   │   ├── location.model.js
+│   │   │   ├── story.model.js
 │   │   │   └── e2ee.model.js
 │   │   ├── routes/          # API routes
 │   │   │   ├── auth.route.js
@@ -231,8 +316,7 @@ Michat/
 │   │   │   ├── group.route.js
 │   │   │   ├── poll.route.js
 │   │   │   ├── location.route.js
-│   │   │   ├── bot.route.js
-│   │   │   ├── translate.route.js
+│   │   │   ├── story.route.js
 │   │   │   └── trello.route.js
 │   │   ├── middlewares/     # Express middlewares
 │   │   │   └── auth.middleware.js
@@ -241,6 +325,7 @@ Michat/
 │   │   │   ├── socket.js    # Socket.IO configuration
 │   │   │   ├── cloudinary.js # Cloudinary configuration
 │   │   │   ├── encryption.js # E2EE encryption utilities
+│   │   │   ├── linkPreview.js # Link preview utilities
 │   │   │   └── utils.js     # Utility functions
 │   │   ├── seeds/           # Database seeders
 │   │   │   └── user.seed.js
@@ -295,8 +380,9 @@ Edit the `.env` file with your configuration:
 
 ```env
 # Server Configuration
-PORT=5000
+PORT=5001
 NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
 
 # Database
 MONGODB_URI=mongodb://localhost:27017/michat
@@ -310,15 +396,15 @@ CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
 # Google API Configuration
-GOOGLE_API_KEY=AIzaSyDhZEf5a3dyl_jGj1VzpltW8dKCtMnHZr4
-GOOGLE_CLIENT_ID=180701485288-5qsb0tdlk7p81jkcjn7u27eqnldeuhf3.apps.googleusercontent.com
+GOOGLE_API_KEY=your_google_api_key
+GOOGLE_CLIENT_ID=your_google_client_id
 
 # Trello API Configuration
-TRELLO_API_KEY=deee5b70e3eeaa8efc1d25aad105f5b1
+TRELLO_API_KEY=your_trello_api_key
 TRELLO_TOKEN=your_trello_token_here
 
 # Dropbox API Configuration
-DROPBOX_APP_KEY=rpbboqvx38917ce
+DROPBOX_APP_KEY=your_dropbox_app_key
 DROPBOX_APP_SECRET=your_dropbox_app_secret_here
 
 # AI/Translation APIs (Optional)
@@ -331,6 +417,8 @@ GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
 | Variable                | Description                          | Required |
 | ----------------------- | ------------------------------------ | -------- |
 | `PORT`                  | Backend server port                  | Yes      |
+| `NODE_ENV`             | Environment (development/production) | No       |
+| `FRONTEND_URL`         | Frontend URL for CORS               | Yes      |
 | `MONGODB_URI`           | MongoDB connection string            | Yes      |
 | `JWT_SECRET`            | Secret key for JWT tokens            | Yes      |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name                | Yes      |
@@ -342,7 +430,6 @@ GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
 | `TRELLO_TOKEN`          | Trello API token                     | No       |
 | `DROPBOX_APP_KEY`       | Dropbox app key                      | No       |
 | `DROPBOX_APP_SECRET`    | Dropbox app secret                   | No       |
-| `NODE_ENV`              | Environment (development/production) | No       |
 
 ## 🎯 Usage
 
@@ -355,7 +442,7 @@ GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
    npm run dev
    ```
 
-   The backend will start on `http://localhost:5000`
+   The backend will start on `http://localhost:5001`
 
 2. **Start Frontend Development Server**
    ```bash
@@ -364,60 +451,40 @@ GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
    ```
    The frontend will start on `http://localhost:5173`
 
-### Third-Party Integrations
+### Key Features Usage
 
-#### Google Drive Integration
-1. Click the integrations menu (three dots) in the message input
-2. Select "Google Drive"
-3. Choose files from your Google Drive
-4. Files will be shared as links in the chat
+#### Draft Messages
+- Start typing a message → automatically saved as draft
+- Switch to another user → draft preview shown in sidebar
+- Return to user → draft automatically restored
+- Send message → draft automatically cleared
 
-#### Trello Integration
-1. Click the integrations menu in the message input
-2. Select "Trello"
-3. Fill in task details (title, description, due date, labels)
-4. Create the task directly from chat
+#### Message Interactions
+- **Right-click message** → Context menu with options
+- **Reply** → Click reply preview to scroll to original message
+- **React** → Click heart icon to add reactions
+- **Forward** → Select multiple users/groups to forward
+- **Edit** → Edit your own messages
+- **Delete** → Delete your own messages with confirmation
 
-#### Dropbox Integration
-1. Click the integrations menu in the message input
-2. Select "Dropbox"
-3. Choose files from your Dropbox
-4. Files will be shared as links in the chat
+#### Smart Features
+- **Type `:` or `@` or `#`** → Emoji/GIF/Sticker suggestions
+- **Emotional themes** → Select emotion for message styling
+- **Voice messages** → Record and send voice notes
+- **File uploads** → Drag & drop or click to upload
 
-### Group Chat Features
+#### Group Management
+- **Create groups** → Set privacy levels and permissions
+- **Member management** → Add/remove, change roles, toggle chat permissions
+- **Invite system** → Generate and share invite codes
+- **Private messages** → Send direct messages within groups
 
-#### Creating Groups
-1. Navigate to Groups page
-2. Click "Create New Group"
-3. Fill in group name, description, and privacy settings
-4. Upload group avatar (optional)
-5. Click "Create Group"
-
-#### Managing Members
-1. Open a group chat
-2. Click the Users icon to open member management
-3. Use the three-dot menu for each member to:
-   - Promote to Admin
-   - Demote to Member
-   - Toggle chat permission (like Zalo)
-   - Send private message
-   - Remove from group
-
-#### Chat Permissions
-- **Admin Control**: Admins can toggle chat permission for individual members
-- **Visual Indicators**: Members with chat disabled show "Bị cấm chat" badge
-- **Input Disabled**: Chat input is disabled for members without permission
-- **Permission Check**: System validates chat permission before sending messages
-
-#### Privacy Levels
-- **Public**: Anyone can find and join
-- **Private**: Only members can see and join via invite
-- **Read-only**: Members can only view messages
-
-#### Invite System
-1. Generate invite code in group settings
-2. Share code with others
-3. Others can join using "Join Group" feature
+#### Story System
+- **Create stories** → Add text and media content
+- **View stories** → Horizontal carousel on homepage
+- **Story reactions** → React with emojis
+- **Story replies** → Reply to stories
+- **Story history** → View your stories in Settings
 
 ### Production Mode
 
@@ -445,20 +512,34 @@ GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
 | `POST` | `/logout`         | User logout                 |
 | `GET`  | `/check`          | Check authentication status |
 | `PUT`  | `/update-profile` | Update user profile         |
+| `PUT`  | `/nickname`       | Update user nickname        |
+| `PUT`  | `/label/:userId`  | Update user label           |
+| `PUT`  | `/nickname`       | Update user nickname        |
+| `PUT`  | `/label/:userId`  | Update user label           |
 
 ### Message Routes (`/api/messages`)
 
-| Method | Endpoint    | Description                     |
-| ------ | ----------- | ------------------------------- |
-| `GET`  | `/users`    | Get users for sidebar           |
-| `GET`  | `/:id`      | Get messages with specific user |
-| `POST` | `/send/:id` | Send message to user            |
+| Method | Endpoint          | Description                     |
+| ------ | ----------------- | ------------------------------- |
+| `GET`  | `/users`          | Get users for sidebar           |
+| `GET`  | `/:id`            | Get messages with specific user |
+| `POST` | `/send/:id`       | Send message to user            |
+| `POST` | `/reaction/:id`   | Add reaction to message         |
+| `PUT`  | `/pin/:id`        | Pin/unpin message               |
+| `PUT`  | `/edit/:id`       | Edit message                    |
+| `DELETE` | `/:id`           | Delete message                  |
+| `POST` | `/forward`        | Forward message to users/groups |
+| `POST` | `/reaction/:id`   | Add reaction to message         |
+| `PUT`  | `/pin/:id`        | Pin/unpin message               |
+| `PUT`  | `/edit/:id`       | Edit message                    |
+| `DELETE` | `/:id`           | Delete message                  |
+| `POST` | `/forward`        | Forward message to users/groups |
 
 ### Group Routes (`/api/groups`)
 
 | Method | Endpoint                                    | Description                           |
 | ------ | ------------------------------------------- | ------------------------------------- |
-| `POST` | `/create`                                   | Create a new group                    |
+| `POST` | `/`                                         | Create a new group                    |
 | `GET`  | `/my-groups`                                | Get user's groups                     |
 | `GET`  | `/:groupId`                                 | Get group details                     |
 | `PUT`  | `/:groupId`                                 | Update group information              |
@@ -468,6 +549,7 @@ GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
 | `DELETE` | `/:groupId/members/:memberId`              | Remove member from group              |
 | `PUT`  | `/:groupId/members/:memberId/role`         | Update member role                    |
 | `PUT`  | `/:groupId/members/:memberId/chat`         | Toggle member chat permission         |
+| `PUT`  | `/:groupId/nickname/:userId`               | Update member nickname                |
 | `POST` | `/join`                                     | Join group by invite code             |
 | `POST` | `/:groupId/leave`                           | Leave group                           |
 | `POST` | `/:groupId/invite-code`                     | Generate new invite code              |
@@ -492,18 +574,27 @@ GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
 | `POST` | `/live/start`               | Start live location sharing    |
 | `POST` | `/live/stop`                | Stop live location sharing     |
 
-### Bot Routes (`/api/bot`)
+### Story Routes (`/api/story`)
 
 | Method | Endpoint                    | Description                    |
 | ------ | --------------------------- | ------------------------------ |
-| `POST` | `/ask`                      | Ask AI chatbot                 |
-| `POST` | `/suggest`                  | Get smart suggestions          |
+| `POST` | `/`                         | Create a new story             |
+| `GET`  | `/`                         | Get all stories                |
+| `GET`  | `/my-stories`               | Get user's stories             |
+| `DELETE` | `/:storyId`                | Delete story                   |
+| `POST` | `/:storyId/react`           | React to story                 |
+| `POST` | `/:storyId/reply`           | Reply to story                 |
 
-### Translate Routes (`/api/translate`)
+### Story Routes (`/api/story`)
 
 | Method | Endpoint                    | Description                    |
 | ------ | --------------------------- | ------------------------------ |
-| `POST` | `/translate`                | Translate message              |
+| `POST` | `/`                         | Create a new story             |
+| `GET`  | `/`                         | Get all stories                |
+| `GET`  | `/my-stories`               | Get user's stories             |
+| `DELETE` | `/:storyId`                | Delete story                   |
+| `POST` | `/:storyId/react`           | React to story                 |
+| `POST` | `/:storyId/reply`           | Reply to story                 |
 
 ### Trello Routes (`/api/trello`)
 
@@ -529,6 +620,36 @@ GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
 | `getOnlineUsers` | Broadcast online users list |
 | `newMessage`     | New message received        |
 | `messageSent`    | Message sent confirmation   |
+| `messageDeleted` | Message deleted notification |
+
+## 🚀 Deployment
+
+### Render Deployment
+
+1. **Backend Deployment**
+   - Connect your GitHub repository to Render
+   - Set build command: `npm install`
+   - Set start command: `npm start`
+   - Add environment variables
+
+2. **Frontend Deployment**
+   - Set build command: `npm run build`
+   - Set start command: `npm run preview`
+   - Add environment variables
+
+### Environment Variables for Production
+
+```env
+# Backend
+PORT=10000
+NODE_ENV=production
+FRONTEND_URL=https://your-frontend-url.onrender.com
+MONGODB_URI=your_mongodb_atlas_uri
+JWT_SECRET=your_production_jwt_secret
+
+# Frontend
+VITE_API_URL=https://your-backend-url.onrender.com
+```
 
 ## 🤝 Contributing
 
@@ -553,6 +674,8 @@ This project is licensed under the ISC License - see the [LICENSE](LICENSE) file
 - [Google Drive API](https://developers.google.com/drive) - File storage integration
 - [Trello API](https://developer.atlassian.com/cloud/trello/) - Task management integration
 - [Dropbox API](https://www.dropbox.com/developers) - File storage integration
+- [Zustand](https://github.com/pmndrs/zustand) - Lightweight state management
+- [Lucide React](https://lucide.dev/) - Beautiful icons
 
 ---
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuthStore } from "../stores/useAuthStore";
 import { Link } from "react-router-dom";
 import { 
@@ -14,38 +14,32 @@ import {
     ArrowRight,
     CheckCircle
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
-    const [isSignUp, setIsSignUp] = useState(false);
     const [formData, setFormData] = useState({
         email: "",
-        password: "",
-        fullName: "",
-        confirmPassword: ""
+        password: ""
     });
     const [focusedField, setFocusedField] = useState("");
     const { login, isLoggingIn } = useAuthStore();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (isSignUp) {
-            // Handle signup logic here
-            console.log("Sign up:", formData);
-        } else {
-            login(formData);
+        
+        // Validation
+        if (!formData.email.trim()) {
+            toast.error("Vui lòng nhập email");
+            return;
         }
-    };
+        
+        if (!formData.password) {
+            toast.error("Vui lòng nhập mật khẩu");
+            return;
+        }
 
-    const toggleMode = () => {
-        setIsSignUp(!isSignUp);
-        setFormData({
-            email: "",
-            password: "",
-            fullName: "",
-            confirmPassword: ""
-        });
-        setFocusedField("");
+        login(formData);
     };
 
     return (
@@ -78,47 +72,16 @@ const LoginPage = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent animate-gradient-shift">
-                                            {isSignUp ? "Join Michat" : "Welcome Back"}
+                                            Welcome Back
                                         </h1>
                                         <p className="text-base-content/70">
-                                            {isSignUp 
-                                                ? "Create your account and start connecting" 
-                                                : "Sign in to continue your conversations"
-                                            }
+                                            Sign in to continue your conversations
                                         </p>
                                     </div>
                                 </div>
 
                                 {/* Form */}
                                 <form onSubmit={handleSubmit} className="space-y-6">
-                                    {isSignUp && (
-                                        <div className="form-control animate-fade-in-up">
-                                            <label className="label">
-                                                <span className="label-text font-medium">Full Name</span>
-                                            </label>
-                                            <div className={`relative transition-all duration-300 ${
-                                                focusedField === 'fullName' ? 'scale-105' : 'scale-100'
-                                            }`}>
-                                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                    <User className={`h-5 w-5 transition-colors duration-300 ${
-                                                        focusedField === 'fullName' ? 'text-primary' : 'text-base-content/40'
-                                                    }`} />
-                                                </div>
-                                                <input
-                                                    type="text"
-                                                    className={`input input-bordered w-full pl-12 transition-all duration-300 ${
-                                                        focusedField === 'fullName' ? 'border-primary shadow-lg' : ''
-                                                    }`}
-                                                    placeholder="John Doe"
-                                                    value={formData.fullName}
-                                                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                                                    onFocus={() => setFocusedField('fullName')}
-                                                    onBlur={() => setFocusedField('')}
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-
                                     <div className="form-control animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                                         <label className="label">
                                             <span className="label-text font-medium">Email</span>
@@ -182,34 +145,6 @@ const LoginPage = () => {
                                         </div>
                                     </div>
 
-                                    {isSignUp && (
-                                        <div className="form-control animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-                                            <label className="label">
-                                                <span className="label-text font-medium">Confirm Password</span>
-                                            </label>
-                                            <div className={`relative transition-all duration-300 ${
-                                                focusedField === 'confirmPassword' ? 'scale-105' : 'scale-100'
-                                            }`}>
-                                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                    <Lock className={`h-5 w-5 transition-colors duration-300 ${
-                                                        focusedField === 'confirmPassword' ? 'text-primary' : 'text-base-content/40'
-                                                    }`} />
-                                                </div>
-                                                <input
-                                                    type="password"
-                                                    className={`input input-bordered w-full pl-12 transition-all duration-300 ${
-                                                        focusedField === 'confirmPassword' ? 'border-primary shadow-lg' : ''
-                                                    }`}
-                                                    placeholder="••••••••"
-                                                    value={formData.confirmPassword}
-                                                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                                                    onFocus={() => setFocusedField('confirmPassword')}
-                                                    onBlur={() => setFocusedField('')}
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-
                                     <button 
                                         type="submit" 
                                         className="btn btn-primary w-full h-14 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 animate-fade-in-up" 
@@ -223,7 +158,7 @@ const LoginPage = () => {
                                             </>
                                         ) : (
                                             <>
-                                                {isSignUp ? "Create Account" : "Sign In"}
+                                                Sign In
                                                 <ArrowRight className="h-5 w-5 ml-2" />
                                             </>
                                         )}
@@ -233,13 +168,13 @@ const LoginPage = () => {
                                 {/* Toggle Mode */}
                                 <div className="text-center animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
                                     <p className="text-base-content/70">
-                                        {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-                                        <button 
-                                            onClick={toggleMode}
+                                        Don't have an account?{" "}
+                                        <Link 
+                                            to="/signup"
                                             className="link link-primary font-semibold hover:scale-105 transition-transform"
                                         >
-                                            {isSignUp ? "Sign in" : "Create account"}
-                                        </button>
+                                            Create account
+                                        </Link>
                                     </p>
                                 </div>
                             </div>
