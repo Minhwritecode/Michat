@@ -8,14 +8,14 @@ const StoryList = () => {
     const [stories, setStories] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const fetchStories = async () => {
-        const res = await fetch("/api/story", { credentials: "include" });
+        const res = await fetch("/story", { credentials: "include" });
         const data = await res.json();
         setStories(data);
     };
     useEffect(() => { fetchStories(); }, []);
 
     const handleReact = async (storyId, emoji) => {
-        await fetch(`/api/story/${storyId}/react`, {
+        await fetch(`/story/${storyId}/react`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -25,7 +25,7 @@ const StoryList = () => {
         fetchStories();
     };
     const handleReply = async (storyId, text) => {
-        await fetch(`/api/story/${storyId}/reply`, {
+        await fetch(`/story/${storyId}/reply`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",

@@ -6,7 +6,7 @@ const LinkPreview = ({ url }) => {
     useEffect(() => {
         const fetchPreview = async () => {
             try {
-                const res = await fetch(`/api/link-preview?url=${encodeURIComponent(url)}`);
+                const res = await fetch(`/link-preview?url=${encodeURIComponent(url)}`);
                 const data = await res.json();
                 setPreview(data);
             } catch {

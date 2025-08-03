@@ -30,6 +30,36 @@ import toast from "react-hot-toast";
 import BotModal from "../bot/BotModal";
 import SmartSuggestions from "../bot/SmartSuggestions";
 import IntegrationsMenu from "../integrations/IntegrationsMenu";
+import clsx from "clsx";
+import EmojiGifStickerSuggest from "./EmojiGifStickerSuggest";
+import EmotionSelector from "./EmotionSelector";
+
+const ACTIONS = [
+  {
+    icon: <Paperclip size={18} />, title: "Đính kèm file", onClick: (fileInputRef, setShowActions) => {fileInputRef.current?.click(); setShowActions(false);}
+  },
+  {
+    icon: <Smile size={18} />, title: "Emoji", onClick: (setShowEmojiPicker, setShowActions) => {setShowEmojiPicker(v => !v); setShowActions(false);}
+  },
+  {
+    icon: <Image size={18} />, title: "GIF", onClick: (setShowGifPicker, setShowActions) => {setShowGifPicker(v => !v); setShowActions(false);}
+  },
+  {
+    icon: <Mic size={18} />, title: "Ghi âm", onClick: (setShowVoiceRecorder, setShowActions) => {setShowVoiceRecorder(v => !v); setShowActions(false);}
+  },
+  {
+    icon: <Search size={18} />, title: "Tìm kiếm tin nhắn", onClick: (setShowMessageSearch, setShowActions) => {setShowMessageSearch(true); setShowActions(false);}
+  },
+  {
+    icon: <MapPin size={18} />, title: "Chia sẻ vị trí", onClick: (setShowLocationShare, setShowActions) => {setShowLocationShare(true); setShowActions(false);}
+  },
+  {
+    icon: <BarChart3 size={18} />, title: "Tạo poll", onClick: (setShowCreatePoll, setShowActions, group) => {if(group) setShowCreatePoll(true); setShowActions(false);}, groupOnly: true
+  },
+  {
+    icon: <Bot size={18} />, title: "Trợ lý AI", onClick: (setShowBotModal, setShowActions) => {setShowBotModal(true); setShowActions(false);}
+  }
+];
 
 const MessageInput = ({ 
     replyTo, 
@@ -52,6 +82,11 @@ const MessageInput = ({
     const { sendMessage, messages } = useChatStore();
     const [showBotModal, setShowBotModal] = useState(false);
     const [showActions, setShowActions] = useState(false);
+    const [showSuggestPopup, setShowSuggestPopup] = useState(false);
+    const [suggestPosition, setSuggestPosition] = useState({ x: 0, y: 0 });
+    const [suggestTrigger, setSuggestTrigger] = useState("");
+    const inputRef = useRef(null);
+    const [selectedEmotion, setSelectedEmotion] = useState("neutral");
 
     const handleFileChange = (e) => {
         const files = Array.from(e.target.files);
@@ -134,7 +169,7 @@ const MessageInput = ({
         try {
             if (editingMessage) {
                 // Handle edit message
-                const response = await fetch(`/api/messages/edit/${editingMessage._id}`, {
+                const response = await fetch(`/messages/edit/${editingMessage._id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -156,18 +191,67 @@ const MessageInput = ({
                         filename: att.filename,
                         size: att.size
                     })),
-                    replyTo: replyTo?._id
+                    replyTo: replyTo?._id,
+                    emotion: selectedEmotion // Add emotion to message
                 });
             }
 
             // Clear form
             setText("");
             setAttachments([]);
+            setSelectedEmotion("neutral"); // Reset emotion
             if (fileInputRef.current) fileInputRef.current.value = "";
         } catch (error) {
             console.error("Failed to send message:", error);
             toast.error("Failed to send message");
         }
+    };
+
+    // Handle input change for suggestions
+    const handleInputChange = (e) => {
+        const value = e.target.value;
+        setText(value);
+        
+        // Check for trigger characters
+        const triggers = [":", "@", "#"];
+        const lastChar = value.slice(-1);
+        const secondLastChar = value.slice(-2, -1);
+        
+        if (triggers.includes(lastChar) || 
+            (lastChar === " " && triggers.includes(secondLastChar))) {
+            const rect = inputRef.current?.getBoundingClientRect();
+            if (rect) {
+                setSuggestPosition({
+                    x: rect.left,
+                    y: rect.bottom
+                });
+                setSuggestTrigger(value.slice(-1));
+                setShowSuggestPopup(true);
+            }
+        } else if (showSuggestPopup) {
+            setShowSuggestPopup(false);
+        }
+    };
+
+    // Handle suggestion selection
+    const handleSuggestionSelect = (suggestion) => {
+        if (typeof suggestion === "string") {
+            // Emoji or text
+            setText(prev => prev.slice(0, -1) + suggestion);
+        } else if (suggestion.type === "gif") {
+            // GIF
+            setAttachments(prev => [...prev, {
+                file: suggestion.url,
+                type: "gif",
+                filename: suggestion.title,
+                size: 0,
+                preview: suggestion.url
+            }]);
+        } else if (suggestion.type === "sticker") {
+            // Sticker
+            setText(prev => prev.slice(0, -1) + suggestion.content);
+        }
+        setShowSuggestPopup(false);
     };
 
     return (
@@ -206,6 +290,7 @@ const MessageInput = ({
             <form onSubmit={handleSendMessage} className="flex items-center gap-2 relative">
                 <div className="flex-1 flex gap-2">
                     <input
+                        ref={inputRef}
                         type="text"
                         className="w-full input input-bordered rounded-lg input-sm sm:input-md"
                         placeholder={
@@ -216,7 +301,7 @@ const MessageInput = ({
                                     : "Type a message..."
                         }
                         value={text}
-                        onChange={(e) => setText(e.target.value)}
+                        onChange={handleInputChange}
                         disabled={
                             group && 
                             !group.members.find(m => 
@@ -237,8 +322,21 @@ const MessageInput = ({
                     />
                 </div>
 
+                {/* Emotion Selector */}
+                <EmotionSelector
+                    selectedEmotion={selectedEmotion}
+                    onEmotionChange={setSelectedEmotion}
+                    disabled={
+                        group && 
+                        !group.members.find(m => 
+                            m.user._id === useChatStore.getState().authUser?._id && 
+                            m.isActive
+                        )?.canChat
+                    }
+                />
+
                 {/* Nút + để mở tiện ích */}
-                <div className="relative">
+                <div className="relative z-30">
                     <button
                         type="button"
                         className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200"
@@ -248,45 +346,57 @@ const MessageInput = ({
                     >
                         <Plus size={22} />
                     </button>
-                    {/* Popup tiện ích */}
-                    <div className={`absolute left-12 top-1/2 -translate-y-1/2 flex gap-2 bg-base-100 shadow-lg rounded-full px-3 py-2 border border-base-200 transition-all duration-300 z-20 ${showActions ? 'opacity-100 pointer-events-auto translate-x-0' : 'opacity-0 pointer-events-none -translate-x-4'}`} style={{minWidth: 0}}>
-                        <button type="button" className="btn btn-circle btn-sm" title="Đính kèm file" onClick={() => {fileInputRef.current?.click(); setShowActions(false);}}>
-                            <Paperclip size={18} />
-                        </button>
-                        <button type="button" className="btn btn-circle btn-sm" title="Emoji" onClick={() => {setShowEmojiPicker(!showEmojiPicker); setShowActions(false);}}>
-                            <Smile size={18} />
-                        </button>
-                        <button type="button" className="btn btn-circle btn-sm" title="GIF" onClick={() => {setShowGifPicker(!showGifPicker); setShowActions(false);}}>
-                            <Image size={18} />
-                        </button>
-                        <button type="button" className="btn btn-circle btn-sm" title="Ghi âm" onClick={() => {setShowVoiceRecorder(!showVoiceRecorder); setShowActions(false);}}>
-                            <Mic size={18} />
-                        </button>
-                        <button type="button" className="btn btn-circle btn-sm" title="Tìm kiếm tin nhắn" onClick={() => {setShowMessageSearch(true); setShowActions(false);}}>
-                            <Search size={18} />
-                        </button>
-                        <button type="button" className="btn btn-circle btn-sm" title="Chia sẻ vị trí" onClick={() => {setShowLocationShare(true); setShowActions(false);}}>
-                            <MapPin size={18} />
-                        </button>
-                        {group && (
-                            <button type="button" className="btn btn-circle btn-sm" title="Tạo poll" onClick={() => {setShowCreatePoll(true); setShowActions(false);}}>
-                                <BarChart3 size={18} />
-                            </button>
-                        )}
-                        <button type="button" className="btn btn-circle btn-sm" title="Trợ lý AI" onClick={() => {setShowBotModal(true); setShowActions(false);}}>
-                            <Bot size={18} />
-                        </button>
-                        {/* Tích hợp khác */}
-                        <IntegrationsMenu
-                            onFilePick={(file) => {
-                                if (file.name) {
-                                    setText(prev => prev + `\n📎 ${file.name}: ${file.url || file.link || file.id}`);
-                                }
-                            }}
-                            onTaskCreate={(task) => {
-                                setText(prev => prev + `\n📋 Task Trello: ${task.title}`);
-                            }}
-                        />
+                    {/* Circle menu tiện ích */}
+                    <div className={clsx(
+                        "fixed left-0 top-0 w-full h-full flex items-end justify-center z-50 pointer-events-none",
+                        showActions && "pointer-events-auto"
+                    )}>
+                        <div className={clsx(
+                            "absolute bottom-20 right-8 sm:right-16 md:right-32 lg:right-64 flex items-center justify-center",
+                            "transition-all duration-300",
+                            showActions ? "opacity-100 scale-100" : "opacity-0 scale-90"
+                        )} style={{width: 180, height: 180}}>
+                            {/* Circle icons */}
+                            {ACTIONS.filter(a => !a.groupOnly || group).map((action, idx, arr) => {
+                                const angle = (360 / arr.length) * idx - 90; // -90 để bắt đầu từ trên
+                                const radius = showActions ? 70 : 0;
+                                const x = radius * Math.cos((angle * Math.PI) / 180);
+                                const y = radius * Math.sin((angle * Math.PI) / 180);
+                                return (
+                                    <button
+                                        key={action.title}
+                                        type="button"
+                                        title={action.title}
+                                        className={clsx(
+                                            "btn btn-circle btn-md absolute bg-base-100 shadow-lg border border-base-200 transition-all duration-500",
+                                            showActions
+                                                ? "opacity-100 scale-100 animate-circle-pop"
+                                                : "opacity-0 scale-50"
+                                        )}
+                                        style={{
+                                            left: 80 + x,
+                                            top: 80 + y,
+                                            transitionDelay: showActions ? `${idx * 40}ms` : `${(arr.length-idx) * 30}ms`,
+                                            transform: showActions
+                                                ? `translate(-50%, -50%) rotate(360deg)`
+                                                : `translate(-50%, -50%) rotate(0deg)`
+                                        }}
+                                        onClick={() => {
+                                            if (action.title === "Đính kèm file") action.onClick(fileInputRef, setShowActions);
+                                            else if (action.title === "Emoji") action.onClick(setShowEmojiPicker, setShowActions);
+                                            else if (action.title === "GIF") action.onClick(setShowGifPicker, setShowActions);
+                                            else if (action.title === "Ghi âm") action.onClick(setShowVoiceRecorder, setShowActions);
+                                            else if (action.title === "Tìm kiếm tin nhắn") action.onClick(setShowMessageSearch, setShowActions);
+                                            else if (action.title === "Chia sẻ vị trí") action.onClick(setShowLocationShare, setShowActions);
+                                            else if (action.title === "Tạo poll") action.onClick(setShowCreatePoll, setShowActions, group);
+                                            else if (action.title === "Trợ lý AI") action.onClick(setShowBotModal, setShowActions);
+                                        }}
+                                    >
+                                        {action.icon}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
 
@@ -300,6 +410,15 @@ const MessageInput = ({
                 </button>
             </form>
             <SmartSuggestions text={text} onSelect={s => setText(s)} />
+
+            {/* Emoji/GIF/Sticker Suggestion Popup */}
+            <EmojiGifStickerSuggest
+                isOpen={showSuggestPopup}
+                onClose={() => setShowSuggestPopup(false)}
+                onSelect={handleSuggestionSelect}
+                triggerText={suggestTrigger}
+                position={suggestPosition}
+            />
 
             {/* Voice Recorder */}
             {showVoiceRecorder && (

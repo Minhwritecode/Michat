@@ -116,7 +116,7 @@ const LocationShare = ({ isOpen, onClose, receiverId = null, groupId = null }) =
                 locationData.expiresAt = expiresAt.toISOString();
             }
 
-            await axios.post("/api/location/share", locationData);
+            await axios.post("/location/share", locationData);
 
             toast.success(
                 isLive 

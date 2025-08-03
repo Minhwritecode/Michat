@@ -22,6 +22,7 @@ export default function UserInfoSidebar({
   loading: externalLoading = false,
   highlight: externalHighlight = false,
 }) {
+  // Hooks luôn ở đầu component
   const [tab, setTab] = useState("images");
   const [nickname, setNickname] = useState(initialNickname);
   const [editing, setEditing] = useState(false);
@@ -49,8 +50,10 @@ export default function UserInfoSidebar({
     m.text && m.text.match(/https?:\/\/[^ \s]+/g)
   ).flatMap(m => m.text.match(/https?:\/\/[^ \s]+/g) || []);
 
-  // Animation: slide in/out
-  if (!open) return null;
+  // Khi nhận nickname props thay đổi, đồng bộ lại state
+  React.useEffect(() => {
+    setNickname(initialNickname);
+  }, [initialNickname]);
 
   // Lưu biệt danh về backend
   const handleSaveNickname = async () => {
@@ -73,11 +76,8 @@ export default function UserInfoSidebar({
     }
   };
 
-  // Khi nhận nickname props thay đổi, đồng bộ lại state
-  // (để khi đổi biệt danh thành viên nhóm sẽ update UI)
-  React.useEffect(() => {
-    setNickname(initialNickname);
-  }, [initialNickname]);
+  // Đặt return null ở đây, sau khi đã gọi hooks
+  if (!open) return null;
 
   return (
     <div className={`fixed top-0 right-0 w-full max-w-sm h-full bg-base-100 shadow-2xl z-50 flex flex-col transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`} style={{borderTopLeftRadius: 24, borderBottomLeftRadius: 24}}>

@@ -175,27 +175,74 @@ export const editMessage = async (req, res) => {
             return res.status(404).json({ error: "Message not found" });
         }
 
+        // Kiểm tra quyền chỉnh sửa
         if (message.senderId.toString() !== userId.toString()) {
-            return res.status(403).json({ error: "Not authorized" });
+            return res.status(403).json({ error: "You can only edit your own messages" });
         }
 
         message.text = text;
         message.isEdited = true;
-        message.editedAt = new Date();
         await message.save();
-
-        // Emit to all connected users
-        const receiverSocketIds = getReceiverSocketId(message.receiverId.toString());
-        const senderSocketIds = getReceiverSocketId(message.senderId.toString());
-
-        const allSocketIds = [...(receiverSocketIds || []), ...(senderSocketIds || [])];
-        allSocketIds.forEach(socketId => {
-            io.to(socketId).emit("messageEdited", { messageId, text, editedAt: message.editedAt });
-        });
 
         res.status(200).json(message);
     } catch (error) {
         console.log("Error in editMessage controller: ", error.message);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+// Forward message to user or group
+export const forwardMessage = async (req, res) => {
+    try {
+        const { messageId, targetType, targetId } = req.body;
+        const senderId = req.user._id;
+
+        // Get original message
+        const originalMessage = await Message.findById(messageId).populate('senderId', 'fullName profilePic');
+        if (!originalMessage) {
+            return res.status(404).json({ error: "Original message not found" });
+        }
+
+        // Create forwarded message
+        const forwardedMessageData = {
+            senderId,
+            text: `Forwarded: ${originalMessage.text || ''}`,
+            attachments: originalMessage.attachments || [],
+            forwardFrom: originalMessage._id,
+            isForwarded: true
+        };
+
+        // Set receiver based on target type
+        if (targetType === 'user') {
+            forwardedMessageData.receiverId = targetId;
+        } else if (targetType === 'group') {
+            forwardedMessageData.groupId = targetId;
+        } else {
+            return res.status(400).json({ error: "Invalid target type" });
+        }
+
+        const newMessage = new Message(forwardedMessageData);
+        await newMessage.save();
+
+        // Populate sender info for real-time
+        await newMessage.populate('senderId', 'fullName profilePic');
+
+        // Send real-time notification
+        if (targetType === 'user') {
+            const receiverSocketIds = getReceiverSocketId(targetId);
+            if (receiverSocketIds && receiverSocketIds.length > 0) {
+                receiverSocketIds.forEach(socketId => {
+                    io.to(socketId).emit("newMessage", newMessage);
+                });
+            }
+        } else if (targetType === 'group') {
+            // Emit to group members (implement group socket logic)
+            io.to(`group_${targetId}`).emit("newMessage", newMessage);
+        }
+
+        res.status(201).json(newMessage);
+    } catch (error) {
+        console.log("Error in forwardMessage controller: ", error.message);
         res.status(500).json({ error: "Internal server error" });
     }
 };

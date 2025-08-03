@@ -6,7 +6,8 @@ import {
     sendMessage,
     addReaction,
     togglePinMessage,
-    editMessage
+    editMessage,
+    forwardMessage
 } from "../controllers/message.controller.js";
 import { getLinkPreview } from "../libs/linkPreview.js";
 
@@ -26,5 +27,6 @@ router.post("/send/:id", protectRoute, sendMessage);
 router.post("/reaction/:messageId", protectRoute, addReaction);
 router.put("/pin/:messageId", protectRoute, togglePinMessage);
 router.put("/edit/:messageId", protectRoute, editMessage);
+router.post("/forward", protectRoute, forwardMessage);
 
 export default router;

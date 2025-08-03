@@ -21,7 +21,7 @@ const TrelloTaskModal = ({ isOpen, onClose, onCreate }) => {
     setLoading(true);
     try {
       // Gọi API backend để tạo task trên Trello
-      const response = await fetch("/api/trello/create-task", {
+              const response = await fetch("/trello/create-task", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

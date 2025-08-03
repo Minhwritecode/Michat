@@ -93,8 +93,32 @@ const ChatContainer = () => {
         setReplyToMessage(null);
     };
 
-    const handleForward = () => {
-        // This will be handled by MessageInput component
+    const handleForward = async (message, targetType, targetId) => {
+        try {
+            // Forward message to specific user or group
+            const response = await fetch("/messages/forward", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    messageId: message._id,
+                    targetType, // "user" or "group"
+                    targetId
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Failed to forward message");
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error("Error forwarding message:", error);
+            throw error;
+        }
     };
 
     const handleCancelReply = () => {

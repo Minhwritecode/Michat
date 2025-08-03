@@ -333,3 +333,21 @@
     }
   }
 }
+
+@keyframes circle-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15) rotate(320deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(360deg);
+  }
+}
+.animate-circle-pop {
+  animation: circle-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}

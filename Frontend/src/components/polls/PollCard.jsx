@@ -50,7 +50,7 @@ const PollCard = ({ poll, onVote, onDelete }) => {
 
         setLoading(true);
         try {
-            const response = await axios.post(`/api/polls/${poll._id}/vote`, {
+            const response = await axios.post(`/polls/${poll._id}/vote`, {
                 optionIndexes: selectedOptions
             });
 
@@ -69,7 +69,7 @@ const PollCard = ({ poll, onVote, onDelete }) => {
 
         if (confirm("Bạn có chắc chắn muốn xóa thăm dò ý kiến này?")) {
             try {
-                await axios.delete(`/api/polls/${poll._id}`);
+                await axios.delete(`/polls/${poll._id}`);
                 toast.success("Đã xóa thăm dò ý kiến");
                 onDelete(poll._id);
             } catch (error) {

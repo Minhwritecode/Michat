@@ -45,7 +45,7 @@ const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
 
         setLoading(true);
         try {
-            const res = await fetch("/api/story", {
+            const res = await fetch("/story", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
