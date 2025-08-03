@@ -50,7 +50,7 @@ const useGroupStore = create(
             createGroup: async (groupData) => {
                 try {
                     set({ loading: true, error: null });
-                    const response = await axios.post("/api/groups/create", groupData);
+                    const response = await axios.post("/api/groups", groupData);
                     
                     const newGroup = response.data.data;
                     set(state => ({

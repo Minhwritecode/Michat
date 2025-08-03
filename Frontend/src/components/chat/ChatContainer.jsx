@@ -82,6 +82,29 @@ const ChatContainer = () => {
 
     const scrollTimeout = useRef(null);
 
+    // Message handlers - moved up to avoid ReferenceError
+    const handleReply = (message) => {
+        setReplyToMessage(message);
+        setEditingMessage(null);
+    };
+
+    const handleEdit = (message) => {
+        setEditingMessage(message);
+        setReplyToMessage(null);
+    };
+
+    const handleForward = () => {
+        // This will be handled by MessageInput component
+    };
+
+    const handleCancelReply = () => {
+        setReplyToMessage(null);
+    };
+
+    const handleCancelEdit = () => {
+        setEditingMessage(null);
+    };
+
     // WebRTC Call handlers (giữ nguyên)
     useEffect(() => {
         if (!socket) return;
@@ -270,28 +293,6 @@ const ChatContainer = () => {
             </div>
         );
     }
-
-    const handleReply = (message) => {
-        setReplyToMessage(message);
-        setEditingMessage(null);
-    };
-
-    const handleEdit = (message) => {
-        setEditingMessage(message);
-        setReplyToMessage(null);
-    };
-
-    const handleForward = () => {
-        // This will be handled by MessageInput component
-    };
-
-    const handleCancelReply = () => {
-        setReplyToMessage(null);
-    };
-
-    const handleCancelEdit = () => {
-        setEditingMessage(null);
-    };
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden relative">

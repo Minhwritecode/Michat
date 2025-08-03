@@ -52,6 +52,83 @@
   }
 }
 
+@keyframes modal-slide-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes backdrop-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Floating animation for messages */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(-1deg);
+  }
+  75% {
+    transform: translateY(-15px) rotate(0.5deg);
+  }
+}
+
+/* Pulse with different colors */
+@keyframes pulse-primary {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes pulse-secondary {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes pulse-accent {
+  0%, 100% {
+    opacity: 0.05;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+
+/* Gradient text animation */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 /* Apply animations */
 .animate-fade-in-up {
   animation: fade-in-up 0.3s ease-out;
@@ -67,6 +144,35 @@
 
 .animate-bounce-in {
   animation: bounce-in 0.3s ease-out;
+}
+
+.animate-modal-slide-in {
+  animation: modal-slide-in 0.3s ease-out;
+}
+
+.animate-backdrop-fade-in {
+  animation: backdrop-fade-in 0.2s ease-out;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-primary {
+  animation: pulse-primary 2s ease-in-out infinite;
+}
+
+.animate-pulse-secondary {
+  animation: pulse-secondary 2s ease-in-out infinite;
+}
+
+.animate-pulse-accent {
+  animation: pulse-accent 2s ease-in-out infinite;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
 }
 
 /* Custom scrollbar for message list */
@@ -202,4 +308,28 @@
 
 [data-theme="dark"] .overflow-y-auto::-webkit-scrollbar-thumb:hover {
   background: rgba(75, 85, 99, 0.5);
+}
+
+/* Line clamp utilities */
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .highlight {
+    animation: highlight-pulse 2s ease-in-out;
+  }
+
+  @keyframes highlight-pulse {
+    0%,
+    100% {
+      background-color: transparent;
+    }
+    50% {
+      background-color: rgba(59, 130, 246, 0.1);
+    }
+  }
 }

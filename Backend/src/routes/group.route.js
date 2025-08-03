@@ -20,7 +20,7 @@ import {
 const router = express.Router();
 
 // Group management routes
-router.post("/create", protectRoute, createGroup);
+router.post("/", protectRoute, createGroup);
 router.get("/my-groups", protectRoute, getUserGroups);
 router.get("/:groupId", protectRoute, getGroupDetails);
 router.put("/:groupId", protectRoute, updateGroup);

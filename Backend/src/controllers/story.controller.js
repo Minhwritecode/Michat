@@ -26,6 +26,42 @@ export const getStories = async (req, res) => {
     }
 };
 
+// Lấy stories của user hiện tại
+export const getMyStories = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const stories = await Story.find({ userId })
+            .populate('userId', 'fullName profilePic')
+            .sort({ createdAt: -1 });
+        res.json(stories);
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi lấy stories của bạn" });
+    }
+};
+
+// Xóa story
+export const deleteStory = async (req, res) => {
+    try {
+        const { storyId } = req.params;
+        const userId = req.user._id;
+        
+        const story = await Story.findById(storyId);
+        if (!story) {
+            return res.status(404).json({ message: "Story không tồn tại" });
+        }
+        
+        // Kiểm tra quyền xóa (chỉ owner mới được xóa)
+        if (story.userId.toString() !== userId) {
+            return res.status(403).json({ message: "Bạn không có quyền xóa story này" });
+        }
+        
+        await Story.findByIdAndDelete(storyId);
+        res.json({ message: "Đã xóa story" });
+    } catch (error) {
+        res.status(500).json({ message: "Lỗi xóa story" });
+    }
+};
+
 // Thả cảm xúc story
 export const reactStory = async (req, res) => {
     try {

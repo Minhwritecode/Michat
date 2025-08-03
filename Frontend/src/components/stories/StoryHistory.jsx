@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Trash2, Eye, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import toast from "react-hot-toast";
-import CreateStory from "./CreateStory";
+import CreateStoryModal from "./CreateStoryModal";
 
 const StoryHistory = () => {
     const [stories, setStories] = useState([]);
@@ -90,7 +90,7 @@ const StoryHistory = () => {
                 </div>
                 <button
                     onClick={() => setShowCreateModal(true)}
-                    className="btn btn-sm btn-primary"
+                    className="btn btn-sm btn-primary gap-2 hover:scale-105 transition-transform"
                 >
                     <Plus size={16} />
                     Tạo story mới
@@ -111,7 +111,7 @@ const StoryHistory = () => {
                     </p>
                     <button
                         onClick={() => setShowCreateModal(true)}
-                        className="btn btn-primary"
+                        className="btn btn-primary gap-2"
                     >
                         <Plus size={16} />
                         Tạo story đầu tiên
@@ -141,7 +141,7 @@ const StoryHistory = () => {
                                             </svg>
                                         </div>
                                     )}
-                                    
+
                                     {/* Action Buttons */}
                                     <div className="absolute top-2 right-2 flex gap-1">
                                         <button
@@ -168,7 +168,7 @@ const StoryHistory = () => {
                                             {story.text}
                                         </p>
                                     )}
-                                    
+
                                     <div className="flex items-center justify-between text-xs text-base-content/60">
                                         <span>{formatDate(story.createdAt)}</span>
                                         {story.reactions?.length > 0 && (
@@ -183,7 +183,7 @@ const StoryHistory = () => {
                         ))}
                     </div>
 
-                    {/* Scroll Indicators */}
+                    {/* Scroll Indicators (simple dots and arrows) */}
                     <div className="flex justify-center mt-4 gap-2">
                         <button className="btn btn-circle btn-sm btn-ghost">
                             <ChevronLeft size={16} />
@@ -201,29 +201,14 @@ const StoryHistory = () => {
             )}
 
             {/* Create Story Modal */}
-            {showCreateModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-base-100 rounded-xl shadow-2xl w-full max-w-md">
-                        <div className="p-6">
-                            <h3 className="text-lg font-semibold mb-4">Tạo story mới</h3>
-                            <CreateStory
-                                onCreated={() => {
-                                    setShowCreateModal(false);
-                                    fetchUserStories();
-                                }}
-                            />
-                        </div>
-                        <div className="p-4 border-t border-base-300">
-                            <button
-                                onClick={() => setShowCreateModal(false)}
-                                className="btn btn-ghost w-full"
-                            >
-                                Hủy
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <CreateStoryModal
+                isOpen={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+                onCreated={() => {
+                    setShowCreateModal(false);
+                    fetchUserStories();
+                }}
+            />
         </div>
     );
 };
