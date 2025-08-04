@@ -96,7 +96,7 @@ const ChatContainer = () => {
     const handleForward = async (message, targetType, targetId) => {
         try {
             // Forward message to specific user or group
-            const response = await fetch("/messages/forward", {
+            const response = await fetch("/api/messages/forward", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

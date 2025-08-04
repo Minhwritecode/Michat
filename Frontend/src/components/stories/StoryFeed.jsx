@@ -13,7 +13,7 @@ const StoryFeed = () => {
     // Fetch tất cả stories còn hiệu lực - sử dụng useCallback
     const fetchStories = useCallback(async () => {
         try {
-            const res = await fetch("/story", { 
+            const res = await fetch("/api/story", { 
                 credentials: "include" 
             });
             if (res.ok) {
@@ -60,7 +60,7 @@ const StoryFeed = () => {
     // Handle story reactions
     const handleReact = async (storyId, emoji) => {
         try {
-            await fetch(`/story/${storyId}/react`, {
+            await fetch(`/api/story/${storyId}/react`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -76,7 +76,7 @@ const StoryFeed = () => {
     // Handle story replies
     const handleReply = async (storyId, text) => {
         try {
-            await fetch(`/story/${storyId}/reply`, {
+            await fetch(`/api/story/${storyId}/reply`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",

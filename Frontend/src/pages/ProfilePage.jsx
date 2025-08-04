@@ -15,15 +15,15 @@ const ProfileActionButton = ({ viewedUser, relationStatus, refresh }) => {
         let url = "";
         switch (action) {
             case "add":
-                            url = `/auth/add-friend/${viewedUser._id}`; break;
+                url = `/api/auth/add-friend/${viewedUser._id}`; break;
         case "accept":
-            url = `/auth/accept-friend/${viewedUser._id}`; break;
+            url = `/api/auth/accept-friend/${viewedUser._id}`; break;
         case "reject":
-            url = `/auth/reject-friend/${viewedUser._id}`; break;
+            url = `/api/auth/reject-friend/${viewedUser._id}`; break;
         case "cancel":
-            url = `/auth/cancel-friend/${viewedUser._id}`; break;
+            url = `/api/auth/cancel-friend/${viewedUser._id}`; break;
         case "unfriend":
-            url = `/auth/unfriend/${viewedUser._id}`; break;
+            url = `/api/auth/unfriend/${viewedUser._id}`; break;
         }
         if (!url) return;
         const res = await fetch(url, { method: "POST", credentials: "include" });
@@ -64,13 +64,13 @@ const ProfilePage = () => {
     const fetchProfile = async () => {
         setLoading(true);
         // Lấy thông tin user đang xem
-        const res = await fetch(`/auth/profile/${userId}`, { credentials: "include" });
+        const res = await fetch(`/api/auth/profile/${userId}`, { credentials: "include" });
         const user = await res.json();
         setViewedUser(user);
         setUserLabel(user.label || "");
         setIsFamily(user.label === "family");
         // Lấy quan hệ
-        const relRes = await fetch(`/auth/friends-requests`, { credentials: "include" });
+        const relRes = await fetch(`/api/auth/friends-requests`, { credentials: "include" });
         const rel = await relRes.json();
         if (user._id === authUser._id) setRelationStatus("me");
         else if (rel.friends.some(u => u._id === user._id)) setRelationStatus("friend");
@@ -78,7 +78,7 @@ const ProfilePage = () => {
         else if (rel.friendRequests.some(u => u._id === user._id)) setRelationStatus("received");
         else setRelationStatus("none");
         // Lấy danh sách bạn bè của user đang xem
-        const friendsRes = await fetch(`/auth/friends-requests`, { credentials: "include" });
+        const friendsRes = await fetch(`/api/auth/friends-requests`, { credentials: "include" });
         const friendsData = await friendsRes.json();
         if (user._id === authUser._id) setFriends(friendsData.friends);
         else {
@@ -105,7 +105,7 @@ const ProfilePage = () => {
 
     const handleLabelChange = async (label) => {
         setUserLabel(label);
-        await fetch(`/auth/label/${viewedUser._id}`, {
+        await fetch(`/api/auth/label/${viewedUser._id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -116,7 +116,7 @@ const ProfilePage = () => {
 
     const handleToggleFamily = async () => {
         try {
-            const res = await fetch(`/auth/family/${viewedUser._id}`, {
+            const res = await fetch(`/api/auth/family/${viewedUser._id}`, {
                 method: "POST",
                 credentials: "include"
             });

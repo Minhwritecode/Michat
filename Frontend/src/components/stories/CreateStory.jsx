@@ -22,7 +22,7 @@ const CreateStory = ({ onCreated }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        const res = await fetch("/story", {
+        const res = await fetch("/api/story", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",

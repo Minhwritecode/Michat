@@ -9,7 +9,7 @@ const StoryList = () => {
     const [showModal, setShowModal] = useState(false);
     
     const fetchStories = useCallback(async () => {
-        const res = await fetch("/story", { credentials: "include" });
+        const res = await fetch("/api/story", { credentials: "include" });
         const data = await res.json();
         setStories(data);
     }, []);
@@ -31,7 +31,7 @@ const StoryList = () => {
     }, [fetchStories]);
 
     const handleReact = async (storyId, emoji) => {
-        await fetch(`/story/${storyId}/react`, {
+        await fetch(`/api/story/${storyId}/react`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -41,7 +41,7 @@ const StoryList = () => {
         fetchStories();
     };
     const handleReply = async (storyId, text) => {
-        await fetch(`/story/${storyId}/reply`, {
+        await fetch(`/api/story/${storyId}/reply`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",

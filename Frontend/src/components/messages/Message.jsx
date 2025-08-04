@@ -548,8 +548,8 @@ const ForwardModal = ({ message, onClose, onForward }) => {
         const fetchData = async () => {
             try {
                 const [usersRes, groupsRes] = await Promise.all([
-                    fetch("/users", { credentials: "include" }),
-                    fetch("/groups/my-groups", { credentials: "include" })
+                    fetch("/api/users", { credentials: "include" }),
+                    fetch("/api/groups/my-groups", { credentials: "include" })
                 ]);
                 
                 if (usersRes.ok) {

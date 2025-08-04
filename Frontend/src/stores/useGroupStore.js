@@ -28,7 +28,7 @@ const useGroupStore = create(
             fetchGroups: async (page = 1, limit = 10, search = "") => {
                 try {
                     set({ loading: true, error: null });
-                    const response = await axiosInstance.get("/groups/my-groups", {
+                    const response = await axiosInstance.get("/api/groups/my-groups", {
                         params: { page, limit, search }
                     });
 
@@ -50,7 +50,7 @@ const useGroupStore = create(
             createGroup: async (groupData) => {
                 try {
                     set({ loading: true, error: null });
-                    const response = await axiosInstance.post("/groups", groupData);
+                    const response = await axiosInstance.post("/api/groups", groupData);
                     
                     const newGroup = response.data.data;
                     set(state => ({
@@ -215,7 +215,7 @@ const useGroupStore = create(
             joinGroup: async (inviteCode) => {
                 try {
                     set({ loading: true, error: null });
-                    const response = await axiosInstance.post("/groups/join", { inviteCode });
+                    const response = await axiosInstance.post("/api/groups/join", { inviteCode });
                     
                     const newGroup = response.data.data;
                     set(state => ({

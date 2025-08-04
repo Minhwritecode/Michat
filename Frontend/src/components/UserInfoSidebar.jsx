@@ -63,7 +63,7 @@ export default function UserInfoSidebar({
     }
     setLoading(true);
     try {
-      const res = await axiosInstance.put("/auth/nickname", { nickname });
+      const res = await axiosInstance.put("/api/auth/nickname", { nickname });
       setEditing(false);
       setHighlight(true);
       setTimeout(() => setHighlight(false), 1200);

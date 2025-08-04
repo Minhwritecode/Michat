@@ -13,7 +13,7 @@ const StoryHistory = () => {
     // Fetch stories của user hiện tại - sử dụng useCallback để tránh re-create
     const fetchUserStories = useCallback(async () => {
         try {
-            const res = await fetch("/story/my-stories", { 
+            const res = await fetch("/api/story/my-stories", { 
                 credentials: "include" 
             });
             if (res.ok) {
@@ -49,7 +49,7 @@ const StoryHistory = () => {
         if (!confirm("Bạn có chắc chắn muốn xóa story này?")) return;
         
         try {
-            const res = await fetch(`/story/${storyId}`, {
+            const res = await fetch(`/api/story/${storyId}`, {
                 method: "DELETE",
                 credentials: "include"
             });

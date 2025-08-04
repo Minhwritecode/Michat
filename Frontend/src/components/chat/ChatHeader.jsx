@@ -26,7 +26,7 @@ const ChatHeader = () => {
   // Hàm cập nhật biệt danh
   const handleUpdateNickname = async (newNickname) => {
     try {
-      await axiosInstance.put("/auth/nickname", { nickname: newNickname });
+      await axiosInstance.put("/api/auth/nickname", { nickname: newNickname });
       setNickname(newNickname);
       toast.success("Đã cập nhật biệt danh!");
     } catch {

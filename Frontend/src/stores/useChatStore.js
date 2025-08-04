@@ -13,7 +13,7 @@ export const useChatStore = create((set, get) => ({
     getUsers: async () => {
         set({ isUsersLoading: true });
         try {
-            const res = await axiosInstance.get("/auth/users-with-unread");
+            const res = await axiosInstance.get("/api/auth/users-with-unread");
             set({ users: res.data });
         } catch (error) {
             toast.error(error.response.data.message);
