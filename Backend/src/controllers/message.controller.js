@@ -285,3 +285,83 @@ export const deleteMessage = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 };
+
+// Mark message as read
+export const markMessageAsRead = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const userId = req.user._id;
+
+        const message = await Message.findById(messageId);
+        if (!message) {
+            return res.status(404).json({ message: "Message not found" });
+        }
+
+        // Check if user is the receiver
+        if (message.receiverId.toString() !== userId.toString()) {
+            return res.status(403).json({ message: "Not authorized to mark this message as read" });
+        }
+
+        // Add user to readBy array if not already there
+        if (!message.readBy.includes(userId)) {
+            message.readBy.push(userId);
+            await message.save();
+        }
+
+        res.status(200).json({ message: "Message marked as read" });
+    } catch (error) {
+        console.error("Error marking message as read:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Get read receipts for a message
+export const getReadReceipts = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const userId = req.user._id;
+
+        const message = await Message.findById(messageId).populate('readBy', 'fullName profilePic');
+        if (!message) {
+            return res.status(404).json({ message: "Message not found" });
+        }
+
+        // Check if user is the sender
+        if (message.senderId.toString() !== userId.toString()) {
+            return res.status(403).json({ message: "Not authorized to view read receipts" });
+        }
+
+        res.status(200).json({ readBy: message.readBy });
+    } catch (error) {
+        console.error("Error getting read receipts:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Mark all messages from a user as read
+export const markAllMessagesAsRead = async (req, res) => {
+    try {
+        const { senderId } = req.params;
+        const userId = req.user._id;
+
+        // Update all unread messages from this sender
+        const result = await Message.updateMany(
+            {
+                senderId: senderId,
+                receiverId: userId,
+                readBy: { $ne: userId }
+            },
+            {
+                $addToSet: { readBy: userId }
+            }
+        );
+
+        res.status(200).json({ 
+            message: "All messages marked as read",
+            updatedCount: result.modifiedCount
+        });
+    } catch (error) {
+        console.error("Error marking all messages as read:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};

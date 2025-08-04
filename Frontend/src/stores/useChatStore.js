@@ -83,4 +83,33 @@ export const useChatStore = create((set, get) => ({
     },
 
     setSelectedUser: (selectedUser) => set({ selectedUser }),
+
+    // Mark message as read
+    markMessageAsRead: async (messageId) => {
+        try {
+            await axiosInstance.put(`/api/messages/${messageId}/read`);
+        } catch (error) {
+            console.error("Error marking message as read:", error);
+        }
+    },
+
+    // Mark all messages from a user as read
+    markAllMessagesAsRead: async (senderId) => {
+        try {
+            await axiosInstance.put(`/api/messages/${senderId}/mark-all-read`);
+        } catch (error) {
+            console.error("Error marking all messages as read:", error);
+        }
+    },
+
+    // Get read receipts for a message
+    getReadReceipts: async (messageId) => {
+        try {
+            const response = await axiosInstance.get(`/api/messages/${messageId}/read-receipts`);
+            return response.data.readBy;
+        } catch (error) {
+            console.error("Error getting read receipts:", error);
+            return [];
+        }
+    },
 }));

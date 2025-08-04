@@ -366,7 +366,7 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
                     {showContextMenu && (
                         <div
                             ref={contextMenuRef}
-                            className="absolute top-0 right-0 bg-base-100 rounded-xl shadow-2xl border border-base-300 p-2 z-50 min-w-48 animate-modal-slide-in"
+                            className="absolute top-0 left-0 bg-base-100/95 backdrop-blur-md rounded-xl shadow-2xl border border-base-300 p-2 z-50 min-w-48 animate-modal-slide-in"
                         >
                             <div className="flex items-center justify-between p-2 border-b border-base-300 mb-2">
                                 <span className="text-sm font-medium">Tùy chọn</span>
@@ -455,7 +455,7 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
 
                     {/* Reactions Picker - Improved UI */}
                     {showReactions && (
-                        <div className="absolute bottom-full left-0 mb-2 bg-base-100 rounded-xl shadow-2xl border border-base-300 p-3 z-50 animate-modal-slide-in">
+                        <div className="absolute bottom-full left-0 mb-2 bg-base-100/95 backdrop-blur-md rounded-xl shadow-2xl border border-base-300 p-3 z-50 animate-modal-slide-in">
                             <div className="flex items-center justify-between mb-3">
                                 <span className="text-sm font-medium">Thả cảm xúc</span>
                                 <button
@@ -519,6 +519,31 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
                         <span className="text-xs opacity-70 ml-1">
                             {message.reactions.length}
                         </span>
+                    </div>
+                </div>
+            )}
+
+            {/* Read Receipts - Show avatars of users who read the message */}
+            {isOwnMessage && message.readBy && message.readBy.length > 0 && (
+                <div className="flex justify-end mb-2">
+                    <div className="flex items-center gap-1 bg-base-200/80 backdrop-blur-sm rounded-full px-2 py-1 shadow-sm">
+                        <span className="text-xs text-base-content/70 mr-1">Đã đọc</span>
+                        <div className="flex -space-x-1">
+                            {message.readBy.slice(0, 3).map((reader, index) => (
+                                <img
+                                    key={reader._id || reader}
+                                    src={reader.profilePic || "/avatar.png"}
+                                    alt={reader.fullName || "User"}
+                                    className="w-5 h-5 rounded-full border border-base-100 shadow-sm"
+                                    title={reader.fullName || "User"}
+                                />
+                            ))}
+                            {message.readBy.length > 3 && (
+                                <div className="w-5 h-5 rounded-full bg-primary text-primary-content text-xs flex items-center justify-center border border-base-100 shadow-sm">
+                                    +{message.readBy.length - 3}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
@@ -605,7 +630,7 @@ const ForwardModal = ({ message, onClose, onForward }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-base-100 rounded-xl max-w-md w-full mx-4 max-h-[80vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-base-300">

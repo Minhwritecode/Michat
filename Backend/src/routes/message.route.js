@@ -8,7 +8,10 @@ import {
     togglePinMessage,
     editMessage,
     forwardMessage,
-    deleteMessage
+    deleteMessage,
+    markMessageAsRead,
+    getReadReceipts,
+    markAllMessagesAsRead
 } from "../controllers/message.controller.js";
 import { getLinkPreview } from "../libs/linkPreview.js";
 
@@ -30,5 +33,10 @@ router.put("/pin/:messageId", protectRoute, togglePinMessage);
 router.put("/edit/:messageId", protectRoute, editMessage);
 router.post("/forward", protectRoute, forwardMessage);
 router.delete("/:messageId", protectRoute, deleteMessage);
+
+// Read receipts routes
+router.put("/:messageId/read", markMessageAsRead);
+router.get("/:messageId/read-receipts", getReadReceipts);
+router.put("/:senderId/mark-all-read", markAllMessagesAsRead);
 
 export default router;

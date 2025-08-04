@@ -360,18 +360,20 @@ const MessageInput = ({
                     />
                 </div>
 
-                {/* Emotion Selector */}
-                <EmotionSelector
-                    selectedEmotion={selectedEmotion}
-                    onEmotionChange={setSelectedEmotion}
-                    disabled={
-                        group && 
-                        !group.members.find(m => 
-                            m.user._id === useChatStore.getState().authUser?._id && 
-                            m.isActive
-                        )?.canChat
-                    }
-                />
+                {/* Emotion Selector - Improved UI */}
+                <div className="relative">
+                    <EmotionSelector
+                        selectedEmotion={selectedEmotion}
+                        onEmotionChange={setSelectedEmotion}
+                        disabled={
+                            group && 
+                            !group.members.find(m => 
+                                m.user._id === useChatStore.getState().authUser?._id && 
+                                m.isActive
+                            )?.canChat
+                        }
+                    />
+                </div>
 
                 {/* Nút + để mở tiện ích */}
                 <div className="relative z-30">

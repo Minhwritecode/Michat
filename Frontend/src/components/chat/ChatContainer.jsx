@@ -18,6 +18,7 @@ const ChatContainer = () => {
         selectedUser,
         subscribeToMessages,
         unsubscribeFromMessages,
+        markAllMessagesAsRead,
     } = useChatStore();
     const { authUser, socket } = useAuthStore();
     const messageEndRef = useRef(null);
@@ -65,6 +66,21 @@ const ChatContainer = () => {
             }
         }
     }, [messages, scrollToBottom]);
+
+    // Auto mark messages as read when user views them
+    useEffect(() => {
+        if (messages && messages.length > 0 && selectedUser) {
+            const unreadMessages = messages.filter(msg => 
+                msg.senderId === selectedUser._id && 
+                !msg.readBy?.includes(authUser._id)
+            );
+            
+            if (unreadMessages.length > 0) {
+                // Mark all messages as read
+                markAllMessagesAsRead(selectedUser._id);
+            }
+        }
+    }, [messages, selectedUser, authUser._id, markAllMessagesAsRead]);
 
     // Handle scroll events
     const handleScroll = useCallback(() => {
@@ -319,12 +335,15 @@ const ChatContainer = () => {
     }
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden relative">
-            <ChatHeader />
+        <div className="flex-1 flex flex-col overflow-hidden relative h-full">
+            {/* Header - Fixed */}
+            <div className="flex-shrink-0">
+                <ChatHeader />
+            </div>
 
-            {/* Reply/Edit Preview with smooth animation */}
+            {/* Reply/Edit Preview - Fixed */}
             {(replyToMessage || editingMessage) && (
-                <div className="bg-base-200 border-b border-base-300 p-3 animate-slide-down">
+                <div className="flex-shrink-0 bg-base-200 border-b border-base-300 p-3 animate-slide-down">
                     <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                             <div className="text-sm font-semibold text-primary">
@@ -344,10 +363,10 @@ const ChatContainer = () => {
                 </div>
             )}
 
-            {/* Message List with optimized scroll */}
+            {/* Message List - Scrollable */}
             <div 
                 ref={messageListRef}
-                className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+                className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth bg-base-100"
                 onScroll={handleScroll}
                 style={{ scrollBehavior: 'smooth' }}
             >
@@ -375,7 +394,7 @@ const ChatContainer = () => {
             {showScrollToBottom && (
                 <button
                     onClick={() => scrollToBottom()}
-                    className={`fixed bottom-20 right-4 btn btn-circle btn-primary shadow-lg transition-all duration-300 z-20 ${
+                    className={`fixed bottom-24 right-4 btn btn-circle btn-primary shadow-lg transition-all duration-300 z-20 ${
                         isScrolling ? 'scale-110' : 'scale-100'
                     }`}
                     title="Scroll to bottom"
@@ -384,8 +403,8 @@ const ChatContainer = () => {
                 </button>
             )}
 
-            {/* Message Input */}
-            <div className="border-t border-base-300 bg-base-100">
+            {/* Message Input - Fixed at bottom */}
+            <div className="flex-shrink-0 border-t border-base-300 bg-base-100">
                 <MessageInput
                     replyTo={replyToMessage}
                     editingMessage={editingMessage}
@@ -394,8 +413,8 @@ const ChatContainer = () => {
                 />
             </div>
 
-            {/* Call buttons - responsive */}
-            <div className="flex gap-2 absolute top-2 right-2 z-10">
+            {/* Call buttons - Fixed position */}
+            <div className="flex gap-2 absolute top-16 right-4 z-10">
                 <button
                     className="btn btn-sm btn-circle btn-primary shadow-lg hover:scale-105 transition-transform duration-200"
                     title="Gọi thoại"

@@ -31,8 +31,11 @@
 - **Session Management**: Cookie-based authentication
 - **Nickname System**: Personal and group member nicknames with editing capability
 - **User Labels**: Categorize users as family, friends, or strangers
-- **Nickname System**: Personal and group member nicknames with editing capability
-- **User Labels**: Categorize users as family, friends, or strangers
+- **User Blocking**: Block/unblock users to prevent unwanted interactions
+- **Conversation Management**: Delete conversations with confirmation
+- **Notification Control**: Mute/unmute notifications for specific users
+- **User Information Sidebar**: View detailed user info, shared media, and conversation stats
+- **Quick Actions**: Call, video call, and message actions directly from user profile
 
 ### 💬 Real-time Messaging
 
@@ -49,7 +52,7 @@
 - **Message Pinning**: Pin important messages
 - **Message Editing**: Edit sent messages (own messages only)
 - **Message Deletion**: Delete messages with confirmation
-- **Read Receipts**: See when messages are read by recipients
+- **Read Receipts**: See when messages are read by recipients with avatar display
 - **Typing Indicators**: Real-time typing status
 - **Draft Messages**: Auto-save and restore unsent messages when switching conversations
 - **Message Reactions**: React to messages with emojis (like, love, laugh, etc.)
@@ -59,7 +62,7 @@
 - **Message Pinning**: Pin important messages
 - **Message Editing**: Edit sent messages (own messages only)
 - **Message Deletion**: Delete messages with confirmation
-- **Read Receipts**: See when messages are read by recipients
+- **Read Receipts**: See when messages are read by recipients with avatar display
 - **Typing Indicators**: Real-time typing status
 
 ### 🎨 Advanced Message Features
@@ -529,6 +532,9 @@ GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
 | `PUT`  | `/edit/:id`       | Edit message                    |
 | `DELETE` | `/:id`           | Delete message                  |
 | `POST` | `/forward`        | Forward message to users/groups |
+| `PUT`  | `/:messageId/read` | Mark message as read           |
+| `GET`  | `/:messageId/read-receipts` | Get read receipts for message |
+| `PUT`  | `/:senderId/mark-all-read` | Mark all messages from user as read |
 | `POST` | `/reaction/:id`   | Add reaction to message         |
 | `PUT`  | `/pin/:id`        | Pin/unpin message               |
 | `PUT`  | `/edit/:id`       | Edit message                    |
