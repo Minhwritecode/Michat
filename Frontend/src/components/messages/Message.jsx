@@ -79,7 +79,7 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
 
     const handleReaction = async (emoji) => {
         try {
-            const response = await fetch(`/messages/reaction/${message._id}`, {
+            const response = await fetch(`/api/messages/reaction/${message._id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -105,7 +105,7 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
 
     const handlePin = async () => {
         try {
-            const response = await fetch(`/messages/pin/${message._id}`, {
+            const response = await fetch(`/api/messages/pin/${message._id}`, {
                 method: 'PUT',
                 credentials: 'include'
             });
@@ -123,7 +123,7 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
         if (!confirm("Bạn có chắc chắn muốn xóa tin nhắn này?")) return;
         
         try {
-            const response = await fetch(`/messages/${message._id}`, {
+            const response = await fetch(`/api/messages/${message._id}`, {
                 method: 'DELETE',
                 credentials: 'include'
             });

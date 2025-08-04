@@ -12,7 +12,7 @@ const BotModal = ({ isOpen, onClose }) => {
     setLoading(true);
     setAnswer("");
     try {
-              const res = await axios.post("/bot/ask", { message: question });
+              const res = await axios.post("/api/bot/ask", { message: question });
       setAnswer(res.data.answer);
     } catch {
       setAnswer("Xin lỗi, bot hiện không trả lời được.");

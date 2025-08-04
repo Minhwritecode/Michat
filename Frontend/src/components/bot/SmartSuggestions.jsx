@@ -27,7 +27,7 @@ const SmartSuggestions = ({ text, onSelect }) => {
   useEffect(() => {
     if (!text.trim()) return setSuggestions([]);
     let ignore = false;
-    axios.post("/bot/suggest", { message: text }).then(res => {
+    axios.post("/api/bot/suggest", { message: text }).then(res => {
       if (!ignore) setSuggestions(res.data.suggestions || []);
     });
     return () => { ignore = true; };

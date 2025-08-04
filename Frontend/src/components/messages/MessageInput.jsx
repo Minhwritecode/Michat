@@ -204,7 +204,7 @@ const MessageInput = ({
         try {
             if (editingMessage) {
                 // Handle edit message
-                const response = await fetch(`/messages/edit/${editingMessage._id}`, {
+                const response = await fetch(`/api/messages/edit/${editingMessage._id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',

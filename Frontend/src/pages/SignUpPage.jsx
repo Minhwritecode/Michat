@@ -31,7 +31,7 @@ const SignUpPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         // Validation
         if (!formData.fullName.trim()) {
             toast.error("Vui lòng nhập họ tên");
@@ -97,7 +97,7 @@ const SignUpPage = () => {
                                                 <Sparkles className="w-3 h-3 text-white" />
                                             </div>
                                         </div>
-                                    </div>
+                            </div>
                                     <div className="space-y-2">
                                         <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent animate-gradient-shift">
                                             Join Michat
@@ -105,15 +105,15 @@ const SignUpPage = () => {
                                         <p className="text-base-content/70">
                                             Create your account and start connecting
                                         </p>
-                                    </div>
-                                </div>
+                        </div>
+                    </div>
 
                                 {/* Form */}
-                                <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                                     <div className="form-control animate-fade-in-up">
-                                        <label className="label">
-                                            <span className="label-text font-medium">Full Name</span>
-                                        </label>
+                            <label className="label">
+                                <span className="label-text font-medium">Full Name</span>
+                            </label>
                                         <div className={`relative transition-all duration-300 ${
                                             focusedField === 'fullName' ? 'scale-105' : 'scale-100'
                                         }`}>
@@ -121,25 +121,25 @@ const SignUpPage = () => {
                                                 <User className={`h-5 w-5 transition-colors duration-300 ${
                                                     focusedField === 'fullName' ? 'text-primary' : 'text-base-content/40'
                                                 }`} />
-                                            </div>
-                                            <input
-                                                type="text"
+                                </div>
+                                <input
+                                    type="text"
                                                 className={`input input-bordered w-full pl-12 transition-all duration-300 ${
                                                     focusedField === 'fullName' ? 'border-primary shadow-lg' : ''
                                                 }`}
                                                 placeholder="John Doe"
-                                                value={formData.fullName}
-                                                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                    value={formData.fullName}
+                                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                                                 onFocus={() => setFocusedField('fullName')}
                                                 onBlur={() => setFocusedField('')}
-                                            />
-                                        </div>
-                                    </div>
+                                />
+                            </div>
+                        </div>
 
                                     <div className="form-control animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-                                        <label className="label">
-                                            <span className="label-text font-medium">Email</span>
-                                        </label>
+                            <label className="label">
+                                <span className="label-text font-medium">Email</span>
+                            </label>
                                         <div className={`relative transition-all duration-300 ${
                                             focusedField === 'email' ? 'scale-105' : 'scale-100'
                                         }`}>
@@ -147,25 +147,25 @@ const SignUpPage = () => {
                                                 <Mail className={`h-5 w-5 transition-colors duration-300 ${
                                                     focusedField === 'email' ? 'text-primary' : 'text-base-content/40'
                                                 }`} />
-                                            </div>
-                                            <input
-                                                type="email"
+                                </div>
+                                <input
+                                    type="email"
                                                 className={`input input-bordered w-full pl-12 transition-all duration-300 ${
                                                     focusedField === 'email' ? 'border-primary shadow-lg' : ''
                                                 }`}
                                                 placeholder="you@example.com"
-                                                value={formData.email}
-                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                 onFocus={() => setFocusedField('email')}
                                                 onBlur={() => setFocusedField('')}
-                                            />
-                                        </div>
-                                    </div>
+                                />
+                            </div>
+                        </div>
 
                                     <div className="form-control animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                                        <label className="label">
-                                            <span className="label-text font-medium">Password</span>
-                                        </label>
+                            <label className="label">
+                                <span className="label-text font-medium">Password</span>
+                            </label>
                                         <div className={`relative transition-all duration-300 ${
                                             focusedField === 'password' ? 'scale-105' : 'scale-100'
                                         }`}>
@@ -173,24 +173,24 @@ const SignUpPage = () => {
                                                 <Lock className={`h-5 w-5 transition-colors duration-300 ${
                                                     focusedField === 'password' ? 'text-primary' : 'text-base-content/40'
                                                 }`} />
-                                            </div>
-                                            <input
-                                                type={showPassword ? "text" : "password"}
+                                </div>
+                                <input
+                                    type={showPassword ? "text" : "password"}
                                                 className={`input input-bordered w-full pl-12 pr-12 transition-all duration-300 ${
                                                     focusedField === 'password' ? 'border-primary shadow-lg' : ''
                                                 }`}
-                                                placeholder="••••••••"
-                                                value={formData.password}
-                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    placeholder="••••••••"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                                 onFocus={() => setFocusedField('password')}
                                                 onBlur={() => setFocusedField('')}
-                                            />
-                                            <button
-                                                type="button"
+                                />
+                                <button
+                                    type="button"
                                                 className="absolute inset-y-0 right-0 pr-4 flex items-center hover:text-primary transition-colors"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                            >
-                                                {showPassword ? (
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    {showPassword ? (
                                                     <EyeOff className="h-5 w-5" />
                                                 ) : (
                                                     <Eye className="h-5 w-5" />
@@ -231,10 +231,10 @@ const SignUpPage = () => {
                                                     <EyeOff className="h-5 w-5" />
                                                 ) : (
                                                     <Eye className="h-5 w-5" />
-                                                )}
-                                            </button>
-                                        </div>
-                                    </div>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
 
                                     <button 
                                         type="submit" 
@@ -242,34 +242,34 @@ const SignUpPage = () => {
                                         style={{ animationDelay: '0.4s' }}
                                         disabled={isSigningUp}
                                     >
-                                        {isSigningUp ? (
-                                            <>
+                            {isSigningUp ? (
+                                <>
                                                 <Loader2 className="h-5 w-5 animate-spin" />
                                                 Creating Account...
-                                            </>
-                                        ) : (
+                                </>
+                            ) : (
                                             <>
                                                 Create Account
                                                 <ArrowRight className="h-5 w-5 ml-2" />
                                             </>
-                                        )}
-                                    </button>
-                                </form>
+                            )}
+                        </button>
+                    </form>
 
                                 {/* Toggle Mode */}
                                 <div className="text-center animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
                                     <p className="text-base-content/70">
-                                        Already have an account?{" "}
+                            Already have an account?{" "}
                                         <Link 
                                             to="/login"
                                             className="link link-primary font-semibold hover:scale-105 transition-transform"
                                         >
-                                            Sign in
-                                        </Link>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                                Sign in
+                            </Link>
+                        </p>
+                    </div>
+                </div>
+            </div>
 
                         {/* Right Side - Michat Animation */}
                         <div className="hidden lg:flex items-center justify-center">
