@@ -36,6 +36,12 @@ const userSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User"
         }],
+        // Nhãn quan hệ dùng cho filter (family, bestie, coworker, friend, stranger)
+        label: {
+            type: String,
+            enum: ["family", "bestie", "coworker", "friend", "stranger", null],
+            default: null
+        },
         // Thêm trường nickname cho user
         nickname: {
             type: String,

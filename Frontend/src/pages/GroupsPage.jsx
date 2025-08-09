@@ -7,13 +7,15 @@ import CreateGroupModal from "../components/groups/CreateGroupModal";
 import JoinGroupModal from "../components/groups/JoinGroupModal";
 
 const GroupsPage = () => {
-    const { selectedGroup, clearSelectedGroup, fetchGroups, loading, error } = useGroupStore();
+    const { selectedGroup, clearSelectedGroup, fetchGroups, fetchMyGroupStats, loading, error } = useGroupStore();
+    const [stats, setStats] = useState({ totalGroups: 0, messagesToday: 0, activeMembers: 0 });
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showJoinModal, setShowJoinModal] = useState(false);
 
     useEffect(() => {
         fetchGroups();
-    }, []);
+        fetchMyGroupStats().then(setStats);
+    }, [fetchGroups, fetchMyGroupStats]);
 
     const handleBackToList = () => {
         clearSelectedGroup();
@@ -102,7 +104,7 @@ const GroupsPage = () => {
                                 </div>
                                 <div>
                                     <h3 className="text-2xl font-bold">
-                                        {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "0"}
+                                        {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : stats.totalGroups}
                                     </h3>
                                     <p className="text-base-content/70">Tổng số nhóm</p>
                                 </div>
@@ -115,7 +117,7 @@ const GroupsPage = () => {
                                     <MessageSquare size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-bold">0</h3>
+                                    <h3 className="text-2xl font-bold">{stats.messagesToday}</h3>
                                     <p className="text-base-content/70">Tin nhắn hôm nay</p>
                                 </div>
                             </div>
@@ -127,7 +129,7 @@ const GroupsPage = () => {
                                     <Users size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="text-2xl font-bold">0</h3>
+                                    <h3 className="text-2xl font-bold">{stats.activeMembers}</h3>
                                     <p className="text-base-content/70">Thành viên hoạt động</p>
                                 </div>
                             </div>

@@ -8,7 +8,7 @@ const StoryHistory = () => {
     const [stories, setStories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const { authUser } = useAuthStore();
+    useAuthStore();
 
     // Fetch stories của user hiện tại - sử dụng useCallback để tránh re-create
     const fetchUserStories = useCallback(async () => {
@@ -20,8 +20,8 @@ const StoryHistory = () => {
                 const data = await res.json();
                 setStories(data);
             }
-        } catch (error) {
-            console.error("Error fetching stories:", error);
+        } catch {
+            console.error("Error fetching stories");
         } finally {
             setLoading(false);
         }
@@ -60,7 +60,7 @@ const StoryHistory = () => {
             } else {
                 toast.error("Xóa story thất bại!");
             }
-        } catch (error) {
+        } catch {
             toast.error("Xóa story thất bại!");
         }
     };

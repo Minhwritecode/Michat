@@ -102,52 +102,52 @@ groupSchema.index({ "members.user": 1 });
 groupSchema.index({ owner: 1 });
 
 // Virtual for member count
-groupSchema.virtual("memberCount").get(function() {
+groupSchema.virtual("memberCount").get(function () {
     return this.members.filter(member => member.isActive).length;
 });
 
 // Methods
-groupSchema.methods.isMember = function(userId) {
-    return this.members.some(member => 
+groupSchema.methods.isMember = function (userId) {
+    return this.members.some(member =>
         member.user.toString() === userId.toString() && member.isActive
     );
 };
 
-groupSchema.methods.isAdmin = function(userId) {
-    return this.owner.toString() === userId.toString() || 
-           this.admins.some(admin => admin.toString() === userId.toString()) ||
-           this.members.some(member => 
-               member.user.toString() === userId.toString() && 
-               member.role === "admin" && 
-               member.isActive
-           );
+groupSchema.methods.isAdmin = function (userId) {
+    return this.owner.toString() === userId.toString() ||
+        this.admins.some(admin => admin.toString() === userId.toString()) ||
+        this.members.some(member =>
+            member.user.toString() === userId.toString() &&
+            member.role === "admin" &&
+            member.isActive
+        );
 };
 
-groupSchema.methods.isOwner = function(userId) {
+groupSchema.methods.isOwner = function (userId) {
     return this.owner.toString() === userId.toString();
 };
 
-groupSchema.methods.canInviteMembers = function(userId) {
-    return this.isAdmin(userId) || 
-           (this.settings.allowMemberInvite && this.isMember(userId));
+groupSchema.methods.canInviteMembers = function (userId) {
+    return this.isAdmin(userId) ||
+        (this.settings.allowMemberInvite && this.isMember(userId));
 };
 
-groupSchema.methods.canChat = function(userId) {
-    const member = this.members.find(m => 
+groupSchema.methods.canChat = function (userId) {
+    const member = this.members.find(m =>
         m.user.toString() === userId.toString() && m.isActive
     );
     return member ? member.canChat && this.settings.allowMemberChat : false;
 };
 
 // Generate invite code
-groupSchema.methods.generateInviteCode = function() {
+groupSchema.methods.generateInviteCode = function () {
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     this.inviteCode = code;
     return code;
 };
 
 // Pre-save middleware
-groupSchema.pre("save", function(next) {
+groupSchema.pre("save", function (next) {
     if (this.isModified("members") || this.isNew) {
         this.lastActivity = new Date();
     }

@@ -15,7 +15,7 @@ import groupRoutes from "./routes/group.route.js";
 import trelloRoutes from "./routes/trello.route.js";
 import locationRoutes from "./routes/location.route.js";
 import pollRoutes from "./routes/poll.route.js";
-
+import botRoutes from "./routes/bot.route.js";
 import { initSocket } from "./libs/socket.js";
 
 dotenv.config();
@@ -44,6 +44,9 @@ app.use(helmet({
             scriptSrc: [
                 "'self'",
                 ...(isProduction ? [] : ["'unsafe-inline'", "'unsafe-eval'"])
+                ,
+                "https://apis.google.com",
+                "https://www.gstatic.com"
             ],
             styleSrc: [
                 "'self'",
@@ -55,17 +58,26 @@ app.use(helmet({
                 "data:",
                 "blob:",
                 "https://res.cloudinary.com",
-                "https://*.cloudinary.com"
+                "https://*.cloudinary.com",
+                "https://*.googleusercontent.com"
             ],
             connectSrc: [
                 "'self'",
                 FRONTEND_URL,
                 `ws://${FRONTEND_DOMAIN}`,
-                `wss://${FRONTEND_DOMAIN}`
+                `wss://${FRONTEND_DOMAIN}`,
+                "https://apis.google.com",
+                "https://www.googleapis.com",
+                "https://accounts.google.com"
             ],
             workerSrc: ["'self'", "blob:"],
             fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
-            frameSrc: ["'self'"],
+            frameSrc: [
+                "'self'",
+                "https://accounts.google.com",
+                "https://*.google.com",
+                "https://*.gstatic.com"
+            ],
             mediaSrc: ["'self'", "data:", "blob:"],
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
@@ -168,6 +180,7 @@ app.use("/api/groups", groupRoutes);
 app.use("/api/trello", trelloRoutes);
 app.use("/api/location", locationRoutes);
 app.use("/api/polls", pollRoutes);
+app.use("/api/bot", botRoutes);
 
 // ======================
 // Health Check Endpoint

@@ -1,11 +1,10 @@
 import React, { useState } from "react";
 import { X, Upload, Users, Lock, Globe, EyeOff, Loader2 } from "lucide-react";
 import useGroupStore from "../../stores/useGroupStore";
-import { useAuthStore } from "../../stores/useAuthStore";
 
 const CreateGroupModal = ({ isOpen, onClose }) => {
     const { createGroup, loading } = useGroupStore();
-    const { authUser } = useAuthStore();
+    // Removed unused variable 'authUser'
 
     const [formData, setFormData] = useState({
         name: "",

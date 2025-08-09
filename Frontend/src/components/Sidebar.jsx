@@ -8,6 +8,8 @@ import { Users } from "lucide-react";
 const LABELS = [
     { key: "all", label: "All" },
     { key: "family", label: "Gia đình" },
+    { key: "bestie", label: "Bạn thân" },
+    { key: "coworker", label: "Đồng nghiệp" },
     { key: "friend", label: "Bạn bè" },
     { key: "stranger", label: "Người lạ" },
 ];
@@ -27,6 +29,9 @@ const Sidebar = () => {
 
     useEffect(() => {
         getUsers();
+        const onLabel = () => getUsers();
+        window.addEventListener('label-updated', onLabel);
+        return () => window.removeEventListener('label-updated', onLabel);
     }, [getUsers]);
 
     // Filter users với unreadCount thực tế
@@ -42,7 +47,7 @@ const Sidebar = () => {
     if (isUsersLoading) return <SidebarSkeleton />;
 
     return (
-        <aside className="h-full w-20 lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
+        <aside className="h-full w-20 lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200 overflow-hidden">
             <div className="border-b border-base-300 w-full p-5">
                 <div className="flex items-center gap-2">
                     <Users className="size-6" />
@@ -90,7 +95,7 @@ const Sidebar = () => {
                 {filteredUsers.map(user => {
                     const hasUserDraft = hasDraft(user._id);
                     const draftPreview = getDraftPreview(user._id);
-                    
+
                     return (
                         <button
                             key={user._id}

@@ -47,9 +47,9 @@ const ChatContainer = () => {
     // Smooth scroll to bottom with animation
     const scrollToBottom = useCallback((behavior = "smooth") => {
         if (messageEndRef.current) {
-            messageEndRef.current.scrollIntoView({ 
-                behavior, 
-                block: "end" 
+            messageEndRef.current.scrollIntoView({
+                behavior,
+                block: "end"
             });
         }
     }, []);
@@ -70,13 +70,12 @@ const ChatContainer = () => {
     // Auto mark messages as read when user views them
     useEffect(() => {
         if (messages && messages.length > 0 && selectedUser) {
-            const unreadMessages = messages.filter(msg => 
-                msg.senderId === selectedUser._id && 
+            const unreadMessages = messages.filter(msg =>
+                msg.senderId === selectedUser._id &&
                 !msg.readBy?.includes(authUser._id)
             );
-            
+
             if (unreadMessages.length > 0) {
-                // Mark all messages as read
                 markAllMessagesAsRead(selectedUser._id);
             }
         }
@@ -85,11 +84,11 @@ const ChatContainer = () => {
     // Handle scroll events
     const handleScroll = useCallback(() => {
         if (!messageListRef.current) return;
-        
+
         const messageList = messageListRef.current;
         const isNearBottom = messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 100;
         setShowScrollToBottom(!isNearBottom);
-        
+
         // Debounce scroll indicator
         setIsScrolling(true);
         clearTimeout(scrollTimeout.current);
@@ -98,7 +97,7 @@ const ChatContainer = () => {
 
     const scrollTimeout = useRef(null);
 
-    // Message handlers - moved up to avoid ReferenceError
+    // Message handlers
     const handleReply = (message) => {
         setReplyToMessage(message);
         setEditingMessage(null);
@@ -111,7 +110,6 @@ const ChatContainer = () => {
 
     const handleForward = async (message, targetType, targetId) => {
         try {
-            // Forward message to specific user or group
             const response = await fetch("/api/messages/forward", {
                 method: "POST",
                 headers: {
@@ -120,7 +118,7 @@ const ChatContainer = () => {
                 credentials: "include",
                 body: JSON.stringify({
                     messageId: message._id,
-                    targetType, // "user" or "group"
+                    targetType,
                     targetId
                 })
             });
@@ -145,11 +143,10 @@ const ChatContainer = () => {
         setEditingMessage(null);
     };
 
-    // WebRTC Call handlers (giữ nguyên)
+    // WebRTC Call handlers
     useEffect(() => {
         if (!socket) return;
 
-        // Nhận cuộc gọi đến
         const handleIncomingCall = async ({ from, offer, callType }) => {
             try {
                 remoteUserRef.current = from;
@@ -189,7 +186,6 @@ const ChatContainer = () => {
             }
         };
 
-        // Nhận answer
         const handleCallAnswer = async ({ answer }) => {
             try {
                 await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
@@ -199,7 +195,6 @@ const ChatContainer = () => {
             }
         };
 
-        // Nhận ICE candidate
         const handleIceCandidate = async ({ candidate }) => {
             try {
                 if (candidate && pcRef.current) {
@@ -210,7 +205,6 @@ const ChatContainer = () => {
             }
         };
 
-        // Kết thúc cuộc gọi
         const handleCallEnd = () => {
             handleEndCall();
         };
@@ -319,26 +313,31 @@ const ChatContainer = () => {
 
     if (isMessagesLoading) {
         return (
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <ChatHeader />
+            <div className="flex flex-col h-full">
+                <div className="flex-shrink-0">
+                    <ChatHeader startCall={startCall} />
+                </div>
                 <div className="flex-1 overflow-y-auto">
                     <MessageSkeleton />
                 </div>
-                <MessageInput
-                    replyTo={replyToMessage}
-                    editingMessage={editingMessage}
-                    onCancelReply={handleCancelReply}
-                    onCancelEdit={handleCancelEdit}
-                />
+                <div className="sticky bottom-0 border-t border-base-300 bg-base-100">
+                    <MessageInput
+                        replyTo={replyToMessage}
+                        editingMessage={editingMessage}
+                        onCancelReply={handleCancelReply}
+                        onCancelEdit={handleCancelEdit}
+                        privateMessageTo={selectedUser}
+                    />
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden relative h-full">
+        <div className="flex flex-col h-full relative">
             {/* Header - Fixed */}
             <div className="flex-shrink-0">
-                <ChatHeader />
+                <ChatHeader startCall={startCall} />
             </div>
 
             {/* Reply/Edit Preview - Fixed */}
@@ -353,7 +352,7 @@ const ChatContainer = () => {
                                 {replyToMessage?.text || editingMessage?.text}
                             </div>
                         </div>
-                        <button 
+                        <button
                             onClick={replyToMessage ? handleCancelReply : handleCancelEdit}
                             className="btn btn-circle btn-xs btn-ghost ml-2 flex-shrink-0"
                         >
@@ -364,7 +363,7 @@ const ChatContainer = () => {
             )}
 
             {/* Message List - Scrollable */}
-            <div 
+            <div
                 ref={messageListRef}
                 className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth bg-base-100"
                 onScroll={handleScroll}
@@ -374,7 +373,7 @@ const ChatContainer = () => {
                     <div
                         key={message._id}
                         className={`animate-fade-in-up`}
-                        style={{ 
+                        style={{
                             animationDelay: `${Math.min(index * 50, 500)}ms`,
                             animationFillMode: 'both'
                         }}
@@ -394,9 +393,8 @@ const ChatContainer = () => {
             {showScrollToBottom && (
                 <button
                     onClick={() => scrollToBottom()}
-                    className={`fixed bottom-24 right-4 btn btn-circle btn-primary shadow-lg transition-all duration-300 z-20 ${
-                        isScrolling ? 'scale-110' : 'scale-100'
-                    }`}
+                    className={`fixed bottom-24 right-4 btn btn-circle btn-primary shadow-lg transition-all duration-300 z-20 ${isScrolling ? 'scale-110' : 'scale-100'
+                        }`}
                     title="Scroll to bottom"
                 >
                     <ChevronDown size={20} />
@@ -404,31 +402,14 @@ const ChatContainer = () => {
             )}
 
             {/* Message Input - Fixed at bottom */}
-            <div className="flex-shrink-0 border-t border-base-300 bg-base-100">
+            <div className="sticky bottom-0 border-t border-base-300 bg-base-100">
                 <MessageInput
                     replyTo={replyToMessage}
                     editingMessage={editingMessage}
                     onCancelReply={handleCancelReply}
                     onCancelEdit={handleCancelEdit}
+                    privateMessageTo={selectedUser}
                 />
-            </div>
-
-            {/* Call buttons - Fixed position */}
-            <div className="flex gap-2 absolute top-16 right-4 z-10">
-                <button
-                    className="btn btn-sm btn-circle btn-primary shadow-lg hover:scale-105 transition-transform duration-200"
-                    title="Gọi thoại"
-                    onClick={() => startCall("voice")}
-                >
-                    <Phone size={18} />
-                </button>
-                <button
-                    className="btn btn-sm btn-circle btn-primary shadow-lg hover:scale-105 transition-transform duration-200"
-                    title="Gọi video"
-                    onClick={() => startCall("video")}
-                >
-                    <Video size={18} />
-                </button>
             </div>
 
             <CallModal

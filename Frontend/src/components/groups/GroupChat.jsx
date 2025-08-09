@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { 
-    Send, 
-    Image, 
-    File, 
-    Smile, 
-    MoreVertical, 
-    Users, 
-    Settings, 
+import {
+    Send,
+    Image,
+    File,
+    Smile,
+    MoreVertical,
+    Users,
+    Settings,
     Crown,
     UserPlus,
     Copy,
@@ -15,27 +15,28 @@ import {
     LogOut,
     Shield,
     Eye,
-    EyeOff
+    EyeOff,
+    X
 } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import useGroupStore from "../../stores/useGroupStore";
 import Message from "../messages/Message";
 import MessageInput from "../messages/MessageInput";
 import EmojiPicker from "../emoji/EmojiPicker";
+import { useChatStore } from "../../stores/useChatStore";
 const GroupChat = ({ group }) => {
     const { authUser } = useAuthStore();
-    const { 
-        isGroupAdmin, 
-        isGroupOwner, 
-        removeMember, 
+    const { messages, getGroupMessages } = useChatStore();
+    const {
+        isGroupAdmin,
+        isGroupOwner,
+        removeMember,
         updateMemberRole,
         leaveGroup,
         deleteGroup,
-        generateInviteCode 
+        generateInviteCode
     } = useGroupStore();
 
-    const [messages, setMessages] = useState([]);
-    const [newMessage, setNewMessage] = useState("");
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [showMembers, setShowMembers] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
@@ -50,33 +51,12 @@ const GroupChat = ({ group }) => {
     const isAdmin = isGroupAdmin(group._id, authUser._id);
     const isOwner = isGroupOwner(group._id, authUser._id);
 
-    // Mock messages for demo
+    // Load group messages from store
     useEffect(() => {
-        const mockMessages = [
-            {
-                _id: "1",
-                senderId: group.owner,
-                text: "Chào mừng mọi người đến với nhóm! 👋",
-                createdAt: new Date(Date.now() - 3600000),
-                messageType: "group"
-            },
-            {
-                _id: "2",
-                senderId: group.members[0]?.user,
-                text: "Cảm ơn bạn đã tạo nhóm này!",
-                createdAt: new Date(Date.now() - 1800000),
-                messageType: "group"
-            },
-            {
-                _id: "3",
-                senderId: authUser._id,
-                text: "Mọi người có thể chia sẻ ý tưởng ở đây nhé",
-                createdAt: new Date(Date.now() - 900000),
-                messageType: "group"
-            }
-        ];
-        setMessages(mockMessages);
-    }, [group, authUser._id]);
+        if (group?._id) {
+            getGroupMessages(group._id);
+        }
+    }, [group?._id, getGroupMessages]);
 
     useEffect(() => {
         scrollToBottom();
@@ -86,43 +66,7 @@ const GroupChat = ({ group }) => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    const handleSendMessage = async () => {
-        if (!newMessage.trim()) return;
-
-        // Check if user can chat
-        const canUserChat = group.members.find(m => 
-            m.user._id === authUser._id && m.isActive
-        )?.canChat;
-
-        if (!canUserChat) {
-            alert("Bạn không có quyền gửi tin nhắn trong nhóm này");
-            return;
-        }
-
-        const messageData = {
-            text: newMessage,
-            groupId: group._id,
-            messageType: privateMessageTo ? "group_private" : "group",
-            privateTo: privateMessageTo?._id
-        };
-
-        // Add message to UI immediately
-        const tempMessage = {
-            _id: Date.now().toString(),
-            senderId: authUser._id,
-            text: newMessage,
-            createdAt: new Date(),
-            messageType: messageData.messageType,
-            privateTo: privateMessageTo?._id
-        };
-
-        setMessages(prev => [...prev, tempMessage]);
-        setNewMessage("");
-        setPrivateMessageTo(null);
-
-        // TODO: Send to backend
-        // await sendMessage(messageData);
-    };
+    // Sending is handled by MessageInput via useChatStore.sendMessage
 
     const handleFileUpload = (file) => {
         // TODO: Handle file upload
@@ -134,8 +78,7 @@ const GroupChat = ({ group }) => {
         console.log("Image upload:", file);
     };
 
-    const handleEmojiSelect = (emoji) => {
-        setNewMessage(prev => prev + emoji);
+    const handleEmojiSelect = () => {
         setShowEmojiPicker(false);
     };
 
@@ -206,7 +149,7 @@ const GroupChat = ({ group }) => {
     return (
         <div className="h-full flex flex-col bg-base-100">
             {/* Chat Header */}
-            <div className="bg-base-200 border-b border-base-300 p-4">
+            <div className="bg-base-200 border-b border-base-300 p-4 sticky top-20 z-20">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <img
@@ -270,7 +213,7 @@ const GroupChat = ({ group }) => {
             <div className="flex-1 flex overflow-hidden">
                 {/* Messages */}
                 <div className="flex-1 flex flex-col">
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div className={`flex-1 overflow-y-auto p-4 space-y-4 pb-24 ${(showMembers || showSettings) ? 'pr-80' : ''}`}>
                         {messages.map((message) => (
                             <Message
                                 key={message._id}
@@ -283,25 +226,12 @@ const GroupChat = ({ group }) => {
                     </div>
 
                     {/* Message Input */}
-                    <div className="p-4 border-t border-base-300">
+                    <div className="p-4 border-t border-base-300 sticky bottom-0 bg-base-100 z-20">
                         <MessageInput
-                            value={newMessage}
-                            onChange={setNewMessage}
-                            onSend={handleSendMessage}
-                            onEmojiClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                            onFileClick={() => fileInputRef.current?.click()}
-                            onImageClick={() => imageInputRef.current?.click()}
-                            placeholder={
-                                privateMessageTo 
-                                    ? `Nhắn tin riêng cho ${privateMessageTo.fullName}...`
-                                    : "Nhắn tin trong nhóm..."
-                            }
-                            disabled={
-                                group.privacy === "readonly" || 
-                                !group.members.find(m => m.user._id === authUser._id && m.isActive)?.canChat
-                            }
+                            group={group}
+                            privateMessageTo={privateMessageTo}
                         />
-                        
+
                         {showEmojiPicker && (
                             <div className="absolute bottom-20 right-4">
                                 <EmojiPicker onEmojiSelect={handleEmojiSelect} />
@@ -312,7 +242,32 @@ const GroupChat = ({ group }) => {
 
                 {/* Sidebar */}
                 {(showMembers || showSettings) && (
-                    <div className="w-80 bg-base-200 border-l border-base-300 overflow-y-auto">
+                    <div className="fixed top-20 right-0 h-[calc(100vh-5rem)] w-80 bg-base-200 border-l border-base-300 overflow-y-auto z-40 shadow-xl">
+                        <div className="sticky top-0 z-10 bg-base-200 border-b border-base-300 p-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => { setShowMembers(true); setShowSettings(false); }}
+                                    className={`btn btn-circle btn-sm btn-ghost ${showMembers ? 'bg-base-300' : ''}`}
+                                    title="Thành viên"
+                                >
+                                    <Users size={16} />
+                                </button>
+                                <button
+                                    onClick={() => { setShowSettings(true); setShowMembers(false); }}
+                                    className={`btn btn-circle btn-sm btn-ghost ${showSettings ? 'bg-base-300' : ''}`}
+                                    title="Cài đặt nhóm"
+                                >
+                                    <Settings size={16} />
+                                </button>
+                            </div>
+                            <button
+                                onClick={() => { setShowMembers(false); setShowSettings(false); }}
+                                className="btn btn-circle btn-sm btn-ghost"
+                                title="Đóng"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
                         {showMembers && (
                             <div className="p-4">
                                 <h3 className="font-bold text-lg mb-4">Thành viên nhóm</h3>
@@ -345,7 +300,7 @@ const GroupChat = ({ group }) => {
                                                     </span>
                                                 </div>
                                             </div>
-                                            
+
                                             {isAdmin && member.user._id !== authUser._id && (
                                                 <button
                                                     onClick={() => setSelectedMember(member)}
@@ -363,7 +318,7 @@ const GroupChat = ({ group }) => {
                         {showSettings && (
                             <div className="p-4">
                                 <h3 className="font-bold text-lg mb-4">Cài đặt nhóm</h3>
-                                
+
                                 {/* Invite Code */}
                                 <div className="mb-6">
                                     <label className="label">
@@ -395,7 +350,7 @@ const GroupChat = ({ group }) => {
                                         <LogOut size={16} />
                                         Rời khỏi nhóm
                                     </button>
-                                    
+
                                     {isOwner && (
                                         <button
                                             onClick={handleDeleteGroup}
@@ -434,7 +389,7 @@ const GroupChat = ({ group }) => {
                         <h3 className="font-bold text-lg mb-4">
                             Tùy chọn cho {selectedMember.user.fullName}
                         </h3>
-                        
+
                         <div className="space-y-2">
                             <button
                                 onClick={() => handleUpdateRole(selectedMember.user._id, "admin")}
@@ -444,7 +399,7 @@ const GroupChat = ({ group }) => {
                                 <Shield size={16} />
                                 Thăng làm quản trị viên
                             </button>
-                            
+
                             <button
                                 onClick={() => handleUpdateRole(selectedMember.user._id, "member")}
                                 className="btn btn-outline w-full justify-start"
@@ -453,7 +408,7 @@ const GroupChat = ({ group }) => {
                                 <Users size={16} />
                                 Hạ xuống thành viên
                             </button>
-                            
+
                             <button
                                 onClick={() => setPrivateMessageTo(selectedMember.user)}
                                 className="btn btn-outline w-full justify-start"
@@ -461,7 +416,7 @@ const GroupChat = ({ group }) => {
                                 <Send size={16} />
                                 Nhắn tin riêng
                             </button>
-                            
+
                             <button
                                 onClick={() => handleRemoveMember(selectedMember.user._id)}
                                 className="btn btn-outline btn-error w-full justify-start"
@@ -470,7 +425,7 @@ const GroupChat = ({ group }) => {
                                 Xóa khỏi nhóm
                             </button>
                         </div>
-                        
+
                         <div className="mt-4 pt-4 border-t border-base-300">
                             <button
                                 onClick={() => setSelectedMember(null)}

@@ -1,7 +1,7 @@
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 
-import cloudinary from "../libs/cloudinary.js";
+import cloudinary, { uploadToCloudinary } from "../libs/cloudinary.js";
 import { getReceiverSocketId, getIO } from "../libs/socket.js";
 
 export const getUsersForSidebar = async (req, res) => {
@@ -43,7 +43,7 @@ export const getMessages = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
     try {
-        const { text, attachments, replyTo } = req.body;
+        const { text, attachments, replyTo, emotion } = req.body;
         const { id: receiverId } = req.params;
         const senderId = req.user._id;
 
@@ -51,31 +51,29 @@ export const sendMessage = async (req, res) => {
             senderId,
             receiverId,
             text,
-            replyTo
+            replyTo,
+            emotion: emotion || 'neutral'
         };
 
         // Handle file uploads
         if (attachments && attachments.length > 0) {
             const uploadedAttachments = [];
-
             for (const attachment of attachments) {
-                const { file, type, filename, size } = attachment;
-
-                // Upload to Cloudinary
-                const uploadResponse = await cloudinary.uploader.upload(file, {
-                    folder: `michat/${type}`,
-                    resource_type: type === 'video' ? 'video' : 'image',
-                    allowed_formats: type === 'document' ? ['pdf', 'doc', 'docx', 'txt'] : undefined
-                });
-
-                uploadedAttachments.push({
-                    type,
-                    url: uploadResponse.secure_url,
-                    filename,
-                    size
-                });
+                const { type, filename, size } = attachment;
+                const fileSrc = attachment.file || attachment.url;
+                const isRemote = typeof fileSrc === "string" && /^https?:\/\//i.test(fileSrc);
+                if (isRemote) {
+                    uploadedAttachments.push({ type, url: fileSrc, filename, size });
+                } else if (fileSrc) {
+                    const uploadResponse = await uploadToCloudinary(fileSrc, `michat/${type || 'file'}`);
+                    uploadedAttachments.push({
+                        type,
+                        url: uploadResponse.secure_url,
+                        filename,
+                        size
+                    });
+                }
             }
-
             messageData.attachments = uploadedAttachments;
         }
 
@@ -87,9 +85,16 @@ export const sendMessage = async (req, res) => {
 
         const receiverSocketIds = getReceiverSocketId(receiverId);
         const io = getIO();
-        if (receiverSocketIds && receiverSocketIds.length > 0 && io) {
-            receiverSocketIds.forEach(socketId => {
-                io.to(socketId).emit("newMessage", newMessage);
+        if (io) {
+            if (receiverSocketIds && receiverSocketIds.length > 0) {
+                receiverSocketIds.forEach(socketId => {
+                    io.to(socketId).emit("newMessage", newMessage);
+                });
+            }
+            // Emit a light update for sidebar ordering
+            io.emit("inboxActivity", {
+                userIds: [senderId.toString(), receiverId.toString()],
+                lastMessageAt: newMessage.createdAt
             });
         }
 
@@ -112,25 +117,40 @@ export const addReaction = async (req, res) => {
             return res.status(404).json({ error: "Message not found" });
         }
 
-        // Remove existing reaction from this user
-        message.reactions = message.reactions.filter(reaction =>
-            reaction.userId.toString() !== userId.toString()
-        );
+        // Ensure array
+        if (!Array.isArray(message.reactions)) message.reactions = [];
 
-        // Add new reaction
-        message.reactions.push({ userId, emoji });
+        // Toggle same emoji from same user; otherwise replace user's reaction
+        const existing = message.reactions.find(r => r.userId.toString() === userId.toString());
+        if (existing && existing.emoji === emoji) {
+            // remove reaction
+            message.reactions = message.reactions.filter(r => r.userId.toString() !== userId.toString());
+        } else {
+            message.reactions = message.reactions.filter(r => r.userId.toString() !== userId.toString());
+            message.reactions.push({ userId, emoji });
+        }
         await message.save();
 
         // Emit to all connected users
-        const receiverSocketIds = getReceiverSocketId(message.receiverId.toString());
-        const senderSocketIds = getReceiverSocketId(message.senderId.toString());
+        const io = getIO();
+        if (io) {
+            const receiverId = message.receiverId ? message.receiverId.toString() : null;
+            const senderId = message.senderId ? message.senderId.toString() : null;
+            const receiverSocketIds = receiverId ? getReceiverSocketId(receiverId) : [];
+            const senderSocketIds = senderId ? getReceiverSocketId(senderId) : [];
+            const allSocketIds = [...(receiverSocketIds || []), ...(senderSocketIds || [])];
+            allSocketIds.forEach(socketId => {
+                io.to(socketId).emit("messageReaction", { messageId, reactions: message.reactions });
+            });
+            // If group message, also emit to group room
+            if (message.groupId) {
+                io.to(`group_${message.groupId.toString()}`).emit("messageReaction", { messageId, reactions: message.reactions });
+            }
+        }
 
-        const allSocketIds = [...(receiverSocketIds || []), ...(senderSocketIds || [])];
-        allSocketIds.forEach(socketId => {
-            io.to(socketId).emit("messageReaction", { messageId, reactions: message.reactions });
-        });
-
-        res.status(200).json(message);
+        // Return populated reactions for client display
+        const populated = await Message.findById(messageId).populate('reactions.userId', 'fullName profilePic');
+        res.status(200).json(populated);
     } catch (error) {
         console.log("Error in addReaction controller: ", error.message);
         res.status(500).json({ error: "Internal server error" });
@@ -272,7 +292,7 @@ export const deleteMessage = async (req, res) => {
         if (io) {
             const receiverSocketIds = getReceiverSocketId(message.receiverId.toString());
             const senderSocketIds = getReceiverSocketId(message.senderId.toString());
-            
+
             const allSocketIds = [...(receiverSocketIds || []), ...(senderSocketIds || [])];
             allSocketIds.forEach(socketId => {
                 io.to(socketId).emit("messageDeleted", { messageId });
@@ -356,7 +376,7 @@ export const markAllMessagesAsRead = async (req, res) => {
             }
         );
 
-        res.status(200).json({ 
+        res.status(200).json({
             message: "All messages marked as read",
             updatedCount: result.modifiedCount
         });

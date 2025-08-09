@@ -27,7 +27,7 @@ const SmartSuggestions = ({ text, onSelect }) => {
   useEffect(() => {
     if (!text.trim()) return setSuggestions([]);
     let ignore = false;
-    axios.post("/api/bot/suggest", { message: text }).then(res => {
+    axios.post("/api/bot/suggest", { text }).then(res => {
       if (!ignore) setSuggestions(res.data.suggestions || []);
     });
     return () => { ignore = true; };
@@ -57,11 +57,10 @@ const SmartSuggestions = ({ text, onSelect }) => {
         return (
           <button
             key={i}
-            className={`btn btn-xs rounded-full px-3 flex items-center gap-1 transition shadow-md ${
-              selected === i
+            className={`btn btn-xs rounded-full px-3 flex items-center gap-1 transition shadow-md ${selected === i
                 ? "bg-primary text-primary-content scale-105"
                 : "btn-outline hover:bg-primary/10"
-            } animate-bounce-in`}
+              } animate-bounce-in`}
             style={{ animationDelay: `${i * 40}ms` }}
             onClick={() => onSelect(s)}
             tabIndex={-1}

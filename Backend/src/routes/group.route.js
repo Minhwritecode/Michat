@@ -14,8 +14,13 @@ import {
     getGroupMembers,
     updateMemberRole,
     toggleMemberChat,
-    updateMemberNickname
+    updateMemberNickname,
+    getGroupStats
 } from "../controllers/group.controller.js";
+import {
+    sendGroupMessage,
+    getGroupMessages
+} from "../controllers/message.group.controller.js";
 
 const router = express.Router();
 
@@ -42,5 +47,11 @@ router.post("/:groupId/leave", protectRoute, leaveGroup);
 
 // Invite code
 router.post("/:groupId/invite-code", protectRoute, generateInviteCode);
+
+router.post("/:groupId/messages", protectRoute, sendGroupMessage);
+router.get("/:groupId/messages", protectRoute, getGroupMessages);
+
+// Stats
+router.get("/stats/me", protectRoute, getGroupStats);
 
 export default router; 

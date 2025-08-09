@@ -23,6 +23,19 @@ const messageSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    attachments: [{
+        type: {
+            type: String,
+            enum: ["image", "gif", "video", "audio", "document"],
+        },
+        url: String,
+        filename: String,
+        size: Number,
+        duration: Number,
+        thumbnail: String,
+        format: String,
+        caption: String
+    }],
     image: {
         type: String
     },
@@ -32,6 +45,11 @@ const messageSchema = new mongoose.Schema({
     replyTo: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Message"
+    },
+    emotion: {
+        type: String,
+        enum: ["neutral", "happy", "love", "sad", "angry", "excited", "special"],
+        default: "neutral"
     },
     forwardedFrom: {
         type: mongoose.Schema.Types.ObjectId,
@@ -43,6 +61,17 @@ const messageSchema = new mongoose.Schema({
     readBy: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
+    }],
+    reactions: [{
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true
+        },
+        emoji: {
+            type: String,
+            required: true
+        }
     }],
     // For group messages
     messageType: {

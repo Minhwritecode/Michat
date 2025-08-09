@@ -140,7 +140,7 @@ export const addFriend = async (req, res) => {
 
         if (!user || !target) return res.status(404).json({ message: "User not found" });
         if (user.friends.includes(targetId)) return res.status(400).json({ message: "Đã là bạn bè" });
-        if (user.sentRequests.includes(targetId)) return res.status(400).json({ message: "Đã gửi lời mời" });
+        if (user.sentRequests.includes(targetId)) return res.status(200).json({ message: "Đã gửi lời mời" });
 
         user.sentRequests.push(targetId);
         target.friendRequests.push(userId);
@@ -231,9 +231,9 @@ export const cancelFriendRequest = async (req, res) => {
 export const getFriendsAndRequests = async (req, res) => {
     try {
         const user = await User.findById(req.user._id)
-            .populate('friends', 'fullName email profilePic')
-            .populate('friendRequests', 'fullName email profilePic')
-            .populate('sentRequests', 'fullName email profilePic');
+            .populate('friends', 'fullName email profilePic label')
+            .populate('friendRequests', 'fullName email profilePic label')
+            .populate('sentRequests', 'fullName email profilePic label');
         res.json({
             friends: user.friends,
             friendRequests: user.friendRequests,
@@ -294,7 +294,8 @@ export const getUsersForSidebar = async (req, res) => {
         const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
         const usersWithLabel = filteredUsers.map(u => ({
             ...u.toObject(),
-            label: getUserLabel(loggedInUser, u)
+            relation: getUserLabel(loggedInUser, u),
+            label: u.label || null
         }));
         res.status(200).json(usersWithLabel);
     } catch (error) {
@@ -310,8 +311,8 @@ export const getUserProfile = async (req, res) => {
         const user = await User.findById(userId).select("-password");
         if (!user) return res.status(404).json({ message: "User not found" });
         const loggedInUser = await User.findById(req.user._id);
-        const label = getUserLabel(loggedInUser, user);
-        res.json({ ...user.toObject(), label });
+        const relation = getUserLabel(loggedInUser, user);
+        res.json({ ...user.toObject(), relation, label: user.label || null });
     } catch (error) {
         res.status(500).json({ message: "Lỗi lấy profile" });
     }
@@ -355,7 +356,8 @@ export const getUsersWithUnreadCount = async (req, res) => {
 
             return {
                 ...user.toObject(),
-                label: getUserLabel(loggedInUser, user),
+                relation: getUserLabel(loggedInUser, user),
+                label: user.label || null,
                 unreadCount
             };
         }));

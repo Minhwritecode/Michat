@@ -14,7 +14,12 @@ export const useChatStore = create((set, get) => ({
         set({ isUsersLoading: true });
         try {
             const res = await axiosInstance.get("/api/auth/users-with-unread");
-            set({ users: res.data });
+            // Ensure label field exists (fallback relation->friend)
+            const users = (res.data || []).map(u => ({
+                ...u,
+                label: u.label || (u.relation === 'friend' ? 'friend' : u.label)
+            }));
+            set({ users });
         } catch (error) {
             toast.error(error.response.data.message);
         } finally {
@@ -33,29 +38,82 @@ export const useChatStore = create((set, get) => ({
             set({ isMessagesLoading: false });
         }
     },
-    sendMessage: async (messageData) => {
-        const { selectedUser, messages } = get();
+
+    // Lấy tin nhắn trong nhóm
+    getGroupMessages: async (groupId, page = 1, limit = 50) => {
+        set({ isMessagesLoading: true });
         try {
-            const res = await axiosInstance.post(`/api/messages/send/${selectedUser._id}`, messageData);
-            set({ messages: [...messages, res.data] });
+            const res = await axiosInstance.get(`/api/groups/${groupId}/messages`, {
+                params: { page, limit }
+            });
+            const messages = res.data?.data?.messages || res.data;
+            set({ messages });
         } catch (error) {
-            toast.error(error.response.data.message);
+            toast.error(error.response?.data?.message || 'Không thể tải tin nhắn nhóm');
+        } finally {
+            set({ isMessagesLoading: false });
+        }
+    },
+    sendMessage: async (messageData, options = {}) => {
+        try {
+            const { isGroup = false, targetId = null } = options;
+
+            if (!targetId) {
+                throw new Error(isGroup ? "Group ID is required" : "No recipient selected");
+            }
+
+            const endpoint = isGroup
+                ? `/api/groups/${targetId}/messages`
+                : `/api/messages/send/${targetId}`;
+
+            const res = await axiosInstance.post(endpoint, messageData);
+
+            // Chuẩn hóa payload khi backend trả về dạng { success, data }
+            const createdMessage = res.data?.data || res.data;
+
+            // Cập nhật state nhanh
+            set(state => ({
+                messages: [...state.messages, createdMessage],
+                groups: isGroup && state.groups
+                    ? state.groups.map(g =>
+                        g._id === targetId ? { ...g, lastMessage: createdMessage } : g
+                    )
+                    : state.groups,
+                users: !isGroup && state.users && createdMessage
+                    ? state.users
+                        .map(u => u._id === (createdMessage.senderId?._id || createdMessage.senderId) || u._id === (createdMessage.receiverId?._id || createdMessage.receiverId)
+                            ? { ...u, lastMessageAt: new Date(createdMessage.createdAt).getTime() }
+                            : u)
+                        .sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0))
+                    : state.users
+            }));
+
+            // Đồng bộ lại danh sách tin nhắn nhóm từ server để đảm bảo nhất quán
+            if (isGroup) {
+                await get().getGroupMessages(targetId).catch(() => { });
+            }
+
+            return createdMessage;
+        } catch (error) {
+            console.error("Send message error:", error);
+            throw error;
         }
     },
 
     subscribeToMessages: () => {
-        const { selectedUser } = get();
-        if (!selectedUser) return;
-
         const socket = useAuthStore.getState().socket;
+        if (!socket) return;
 
         socket.on("newMessage", (newMessage) => {
-            const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser._id;
-            if (!isMessageSentFromSelectedUser) return;
-
-            set({
-                messages: [...get().messages, newMessage],
-            });
+            set({ messages: [...get().messages, newMessage] });
+            // Reorder users in sidebar when a message arrives
+            set(state => ({
+                users: state.users
+                    .map(u => (u._id === (newMessage.senderId?._id || newMessage.senderId) || u._id === (newMessage.receiverId?._id || newMessage.receiverId))
+                        ? { ...u, lastMessageAt: new Date(newMessage.createdAt).getTime() }
+                        : u)
+                    .sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0))
+            }));
         });
 
         socket.on("messageReaction", ({ messageId, reactions }) => {
@@ -64,6 +122,15 @@ export const useChatStore = create((set, get) => ({
                     msg._id === messageId ? { ...msg, reactions } : msg
                 )
             });
+        });
+        socket.on("inboxActivity", ({ userIds, lastMessageAt }) => {
+            set(state => ({
+                users: state.users
+                    .map(u => (userIds.includes(u._id.toString())
+                        ? { ...u, lastMessageAt: new Date(lastMessageAt).getTime() }
+                        : u))
+                    .sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0))
+            }));
         });
 
         socket.on("messageEdited", ({ messageId, text, editedAt }) => {

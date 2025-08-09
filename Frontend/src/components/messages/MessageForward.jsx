@@ -49,7 +49,7 @@ const MessageForward = ({ message, onClose, onForward }) => {
 
             toast.success(`Message forwarded to ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''}`);
             onClose();
-        } catch (error) {
+        } catch {
             toast.error("Failed to forward message");
         }
     };

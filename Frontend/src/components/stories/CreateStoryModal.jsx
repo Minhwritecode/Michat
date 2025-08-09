@@ -1,44 +1,51 @@
 import { useRef, useState } from "react";
-import { X, Image, Video, FileText, Upload, Sparkles } from "lucide-react";
+import { createPortal } from "react-dom";
+import { X, Image, Video, Upload, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 
 const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
     const [text, setText] = useState("");
-    const [media, setMedia] = useState(null);
+    const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [mediaType, setMediaType] = useState(null);
     const fileInputRef = useRef();
     const [loading, setLoading] = useState(false);
 
     const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+        const selectedFile = e.target.files[0];
+        if (!selectedFile) return;
 
-        // Kiểm tra kích thước file (max 10MB)
-        if (file.size > 10 * 1024 * 1024) {
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'];
+        if (!validTypes.includes(selectedFile.type)) {
+            toast.error("Chỉ hỗ trợ file ảnh (JPEG, PNG, GIF) hoặc video (MP4)");
+            return;
+        }
+
+        // Validate file size (max 10MB)
+        if (selectedFile.size > 10 * 1024 * 1024) {
             toast.error("File quá lớn! Tối đa 10MB");
             return;
         }
 
+        setFile(selectedFile);
+
+        // Create preview
         const reader = new FileReader();
         reader.onloadend = () => {
-            setMedia(reader.result);
             setPreview(reader.result);
-            
-            // Xác định loại media
-            if (file.type.startsWith('image/')) {
-                setMediaType('image');
-            } else if (file.type.startsWith('video/')) {
-                setMediaType('video');
-            }
+            setMediaType(
+                selectedFile.type.startsWith('image/') ? 'image' :
+                    selectedFile.type.startsWith('video/') ? 'video' : null
+            );
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(selectedFile);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        if (!text.trim() && !media) {
+
+        if (!text.trim() && !file) {
             toast.error("Vui lòng nhập nội dung hoặc chọn ảnh/video!");
             return;
         }
@@ -47,21 +54,26 @@ const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
         try {
             const res = await fetch("/api/story", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ text: text.trim(), media })
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    text: text.trim(),
+                    media: preview || null,
+                    privacy: 'public'
+                })
             });
-            
-            if (res.ok) {
-                toast.success("Đã tạo story thành công! ✨");
-                resetForm();
-                onCreated && onCreated();
-            } else {
-                const error = await res.json();
-                toast.error(error.message || "Tạo story thất bại!");
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || "Tạo story thất bại!");
             }
+
+            toast.success("Đã tạo story thành công! ✨");
+            resetForm();
+            onCreated?.();
         } catch (error) {
-            toast.error("Lỗi kết nối! Vui lòng thử lại.");
+            console.error("Error creating story:", error);
+            toast.error(error.message || "Lỗi khi tạo story!");
         } finally {
             setLoading(false);
         }
@@ -69,14 +81,14 @@ const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
 
     const resetForm = () => {
         setText("");
-        setMedia(null);
+        setFile(null);
         setPreview(null);
         setMediaType(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
     const handleClose = () => {
-        if (text.trim() || media) {
+        if (text.trim() || file) {
             if (confirm("Bạn có chắc muốn hủy? Nội dung sẽ bị mất.")) {
                 resetForm();
                 onClose();
@@ -88,11 +100,11 @@ const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-backdrop-fade-in">
-            <div className="bg-base-100 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden animate-modal-slide-in">
+    const modalContent = (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-lg backdrop-saturate-150 z-[100]">
+            <div className="bg-base-100/95 text-base-content antialiased w-full h-full overflow-hidden flex flex-col animate-modal-scale">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-base-300">
+                <div className="flex items-center justify-between p-6 border-b border-base-200 sticky top-0 bg-base-100/95 z-10">
                     <div className="flex items-center gap-3">
                         <div className="bg-primary/10 p-2 rounded-full">
                             <Sparkles className="w-5 h-5 text-primary" />
@@ -105,24 +117,26 @@ const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
                     <button
                         onClick={handleClose}
                         className="btn btn-circle btn-sm btn-ghost hover:bg-base-200 transition-colors"
+                        aria-label="Đóng modal"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="p-6 overflow-y-auto max-h-[60vh]">
+                <div className="p-6 overflow-y-auto flex-1">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Text Input */}
                         <div>
-                            <label className="label">
+                            <label htmlFor="story-text" className="label">
                                 <span className="label-text font-medium">Nội dung story</span>
                             </label>
                             <textarea
+                                id="story-text"
                                 className="textarea textarea-bordered w-full min-h-[120px] resize-none focus:border-primary transition-colors"
                                 placeholder="Bạn đang nghĩ gì? Chia sẻ khoảnh khắc đặc biệt..."
                                 value={text}
-                                onChange={e => setText(e.target.value)}
+                                onChange={(e) => setText(e.target.value)}
                                 maxLength={500}
                             />
                             <div className="flex justify-between items-center mt-2">
@@ -138,29 +152,31 @@ const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
                                 <label className="label">
                                     <span className="label-text font-medium">Media</span>
                                 </label>
-                                <div className="relative rounded-xl overflow-hidden border border-base-300">
+                                <div className="relative rounded-xl overflow-hidden border border-base-300 bg-base-200/50">
                                     {mediaType === 'image' ? (
-                                        <img 
-                                            src={preview} 
-                                            alt="Preview" 
-                                            className="w-full max-h-80 object-cover"
+                                        <img
+                                            src={preview}
+                                            alt="Preview"
+                                            className="w-full max-h-80 object-contain"
+                                            onError={() => setPreview(null)}
                                         />
-                                    ) : mediaType === 'video' ? (
-                                        <video 
-                                            src={preview} 
-                                            controls 
-                                            className="w-full max-h-80 object-cover"
+                                    ) : (
+                                        <video
+                                            src={preview}
+                                            controls
+                                            className="w-full max-h-80"
                                         />
-                                    ) : null}
+                                    )}
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setMedia(null);
+                                            setFile(null);
                                             setPreview(null);
                                             setMediaType(null);
                                             if (fileInputRef.current) fileInputRef.current.value = "";
                                         }}
                                         className="absolute top-2 right-2 btn btn-circle btn-sm bg-base-300/80 hover:bg-base-300 transition-colors"
+                                        aria-label="Xóa media"
                                     >
                                         <X size={14} />
                                     </button>
@@ -174,7 +190,12 @@ const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
                                 <label className="label">
                                     <span className="label-text font-medium">Thêm ảnh/video</span>
                                 </label>
-                                <div className="border-2 border-dashed border-base-300 rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                <div
+                                    className="border-2 border-dashed border-base-300 rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    role="button"
+                                    tabIndex={0}
+                                >
                                     <div className="flex flex-col items-center gap-4">
                                         <div className="bg-primary/10 p-4 rounded-full">
                                             <Upload className="w-8 h-8 text-primary" />
@@ -195,10 +216,11 @@ const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
                                     </div>
                                     <input
                                         type="file"
-                                        accept="image/*,video/*"
+                                        accept="image/jpeg,image/png,image/gif,video/mp4"
                                         className="hidden"
                                         ref={fileInputRef}
                                         onChange={handleFileChange}
+                                        aria-label="Chọn file"
                                     />
                                 </div>
                             </div>
@@ -229,9 +251,10 @@ const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-base-300 bg-base-50">
+                <div className="p-6 border-t border-base-200 bg-base-50/90 sticky bottom-0">
                     <div className="flex gap-3">
                         <button
+                            type="button"
                             onClick={handleClose}
                             className="btn btn-ghost flex-1 transition-colors"
                             disabled={loading}
@@ -239,9 +262,10 @@ const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
                             Hủy
                         </button>
                         <button
+                            type="button"
                             onClick={handleSubmit}
-                            className="btn btn-primary flex-1 hover:scale-105 transition-transform"
-                            disabled={loading || (!text.trim() && !media)}
+                            className="btn btn-primary flex-1 hover:scale-105 transition-transform disabled:hover:scale-100"
+                            disabled={loading || (!text.trim() && !file)}
                         >
                             {loading ? (
                                 <>
@@ -260,6 +284,8 @@ const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 };
 
-export default CreateStoryModal; 
+export default CreateStoryModal;

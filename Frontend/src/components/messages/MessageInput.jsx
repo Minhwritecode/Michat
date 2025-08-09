@@ -1,23 +1,28 @@
 import { useRef, useState, useEffect } from "react";
 import { useChatStore } from "../../stores/useChatStore";
-import { 
-    Image, 
-    Send, 
-    X, 
-    Paperclip, 
-    Smile, 
-    Video, 
-    FileText, 
-    Music, 
-    Mic, 
-    Search, 
-    Forward, 
-    Edit, 
+import { useAuthStore } from "../../stores/useAuthStore";
+import {
+    Image,
+    Send,
+    X,
+    Paperclip,
+    Smile,
+    Video,
+    FileText,
+    Music,
+    Mic,
+    Search,
+    Forward,
+    Edit,
     AtSign,
     MapPin,
     BarChart3,
     Bot,
-    Plus
+    Plus,
+    Puzzle,
+    Cloud,
+    ListTodo,
+    Box
 } from "lucide-react";
 import EmojiPicker from "../emoji/EmojiPicker";
 import GifPicker from "../emoji/GifPicker";
@@ -35,38 +40,39 @@ import EmojiGifStickerSuggest from "./EmojiGifStickerSuggest";
 import EmotionSelector from "./EmotionSelector";
 import useDraftStore from "../../stores/useDraftStore";
 
+
 const ACTIONS = [
-  {
-    icon: <Paperclip size={18} />, title: "Đính kèm file", onClick: (fileInputRef, setShowActions) => {fileInputRef.current?.click(); setShowActions(false);}
-  },
-  {
-    icon: <Smile size={18} />, title: "Emoji", onClick: (setShowEmojiPicker, setShowActions) => {setShowEmojiPicker(v => !v); setShowActions(false);}
-  },
-  {
-    icon: <Image size={18} />, title: "GIF", onClick: (setShowGifPicker, setShowActions) => {setShowGifPicker(v => !v); setShowActions(false);}
-  },
-  {
-    icon: <Mic size={18} />, title: "Ghi âm", onClick: (setShowVoiceRecorder, setShowActions) => {setShowVoiceRecorder(v => !v); setShowActions(false);}
-  },
-  {
-    icon: <Search size={18} />, title: "Tìm kiếm tin nhắn", onClick: (setShowMessageSearch, setShowActions) => {setShowMessageSearch(true); setShowActions(false);}
-  },
-  {
-    icon: <MapPin size={18} />, title: "Chia sẻ vị trí", onClick: (setShowLocationShare, setShowActions) => {setShowLocationShare(true); setShowActions(false);}
-  },
-  {
-    icon: <BarChart3 size={18} />, title: "Tạo poll", onClick: (setShowCreatePoll, setShowActions, group) => {if(group) setShowCreatePoll(true); setShowActions(false);}, groupOnly: true
-  },
-  {
-    icon: <Bot size={18} />, title: "Trợ lý AI", onClick: (setShowBotModal, setShowActions) => {setShowBotModal(true); setShowActions(false);}
-  }
+    {
+        icon: <Paperclip size={18} />, title: "Đính kèm file", onClick: (fileInputRef, setShowActions) => { fileInputRef.current?.click(); setShowActions(false); }
+    },
+    {
+        icon: <Smile size={18} />, title: "Emoji", onClick: (setShowEmojiPicker, setShowActions) => { setShowEmojiPicker(v => !v); setShowActions(false); }
+    },
+    {
+        icon: <Image size={18} />, title: "GIF", onClick: (setShowGifPicker, setShowActions) => { setShowGifPicker(v => !v); setShowActions(false); }
+    },
+    {
+        icon: <Mic size={18} />, title: "Ghi âm", onClick: (setShowVoiceRecorder, setShowActions) => { setShowVoiceRecorder(v => !v); setShowActions(false); }
+    },
+    {
+        icon: <Search size={18} />, title: "Tìm kiếm tin nhắn", onClick: (setShowMessageSearch, setShowActions) => { setShowMessageSearch(true); setShowActions(false); }
+    },
+    {
+        icon: <MapPin size={18} />, title: "Chia sẻ vị trí", onClick: (setShowLocationShare, setShowActions) => { setShowLocationShare(true); setShowActions(false); }
+    },
+    {
+        icon: <BarChart3 size={18} />, title: "Tạo poll", onClick: (setShowCreatePoll, setShowActions, group) => { if (group) setShowCreatePoll(true); setShowActions(false); }, groupOnly: true
+    },
+    {
+        icon: <Bot size={18} />, title: "Trợ lý AI", onClick: (setShowBotModal, setShowActions) => { setShowBotModal(true); setShowActions(false); }
+    }
 ];
 
-const MessageInput = ({ 
-    replyTo, 
-    editingMessage, 
-    onCancelEdit, 
-    group = null, 
+const MessageInput = ({
+    replyTo,
+    editingMessage,
+    onCancelEdit,
+    group = null,
     privateMessageTo = null
 }) => {
     const [text, setText] = useState(editingMessage?.text || "");
@@ -80,16 +86,44 @@ const MessageInput = ({
     const [showCreatePoll, setShowCreatePoll] = useState(false);
     const [forwardMessage, setForwardMessage] = useState(null);
     const fileInputRef = useRef(null);
-    const { sendMessage, messages } = useChatStore();
+    const { sendMessage, messages, selectedUser } = useChatStore();
     const [showBotModal, setShowBotModal] = useState(false);
     const [showActions, setShowActions] = useState(false);
+    const [showIntegrationsQuick, setShowIntegrationsQuick] = useState(false);
+    const [quickOpen, setQuickOpen] = useState({ drive: false, trello: false, dropbox: false });
     const [showSuggestPopup, setShowSuggestPopup] = useState(false);
     const [suggestPosition, setSuggestPosition] = useState({ x: 0, y: 0 });
     const [suggestTrigger, setSuggestTrigger] = useState("");
     const inputRef = useRef(null);
+    const actionsOverlayRef = useRef(null);
+    const integrationsMenuRef = useRef(null);
     const [selectedEmotion, setSelectedEmotion] = useState("neutral");
     const { saveDraft, getDraft, clearDraft } = useDraftStore();
-    const currentUserId = privateMessageTo?._id || group?._id;
+    const currentUserId = privateMessageTo?._id || group?._id || selectedUser?._id;
+
+    // Close menus on outside click / Esc
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (showActions && actionsOverlayRef.current && e.target === actionsOverlayRef.current) {
+                setShowActions(false);
+            }
+            if (showIntegrationsQuick && integrationsMenuRef.current && !integrationsMenuRef.current.contains(e.target)) {
+                setShowIntegrationsQuick(false);
+            }
+        };
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                setShowActions(false);
+                setShowIntegrationsQuick(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('keydown', handleEsc);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleEsc);
+        };
+    }, [showActions, showIntegrationsQuick]);
 
     // Load draft khi component mount hoặc user thay đổi
     useEffect(() => {
@@ -109,7 +143,7 @@ const MessageInput = ({
                 text: text,
                 attachments: attachments
             };
-            
+
             // Debounce để tránh lưu quá nhiều
             const timeoutId = setTimeout(() => {
                 if (text.trim() || attachments.length > 0) {
@@ -165,7 +199,14 @@ const MessageInput = ({
     };
 
     const handleGifSelect = (gif) => {
-        setAttachments(prev => [...prev, gif]);
+        const normalized = {
+            file: gif.url || gif.images?.original?.url || gif.preview,
+            type: "gif",
+            filename: gif.filename || `${gif.title || "gif"}.gif`,
+            size: gif.size || 0,
+            preview: gif.preview || gif.url || gif.images?.fixed_height_small?.url || null
+        };
+        setAttachments(prev => [...prev, normalized]);
     };
 
     const handleVoiceMessage = (voiceData) => {
@@ -221,27 +262,33 @@ const MessageInput = ({
                 await sendMessage({
                     text: text.trim(),
                     attachments: attachments.map(att => ({
-                        file: att.file,
+                        file: att.file || att.url,
                         type: att.type,
                         filename: att.filename,
                         size: att.size
                     })),
                     replyTo: replyTo?._id,
-                    emotion: selectedEmotion
+                    emotion: selectedEmotion,
+                    ...(group && privateMessageTo ? { privateTo: privateMessageTo._id } : {})
+                }, {
+                    isGroup: !!group,
+                    targetId: group?._id || privateMessageTo?._id || selectedUser?._id
                 });
-            }
 
-            // Clear form and draft
-            setText("");
-            setAttachments([]);
-            setSelectedEmotion("neutral");
-            if (currentUserId) {
-                clearDraft(currentUserId);
+                // Reset form
+                setText("");
+                setAttachments([]);
+                setSelectedEmotion("neutral");
+
+                // Clear draft
+                if (currentUserId) {
+                    clearDraft(currentUserId);
+                }
+                if (fileInputRef.current) fileInputRef.current.value = "";
             }
-            if (fileInputRef.current) fileInputRef.current.value = "";
         } catch (error) {
             console.error("Failed to send message:", error);
-            toast.error("Failed to send message");
+            toast.error(error.response?.data?.message || "Failed to send message");
         }
     };
 
@@ -249,13 +296,13 @@ const MessageInput = ({
     const handleInputChange = (e) => {
         const value = e.target.value;
         setText(value);
-        
+
         // Check for trigger characters
         const triggers = [":", "@", "#"];
         const lastChar = value.slice(-1);
         const secondLastChar = value.slice(-2, -1);
-        
-        if (triggers.includes(lastChar) || 
+
+        if (triggers.includes(lastChar) ||
             (lastChar === " " && triggers.includes(secondLastChar))) {
             const rect = inputRef.current?.getBoundingClientRect();
             if (rect) {
@@ -332,22 +379,39 @@ const MessageInput = ({
                         type="text"
                         className="w-full input input-bordered rounded-lg input-sm sm:input-md"
                         placeholder={
-                            privateMessageTo 
+                            privateMessageTo
                                 ? `Nhắn tin riêng cho ${privateMessageTo.fullName}...`
-                                : group 
+                                : group
                                     ? "Nhắn tin trong nhóm..."
                                     : "Type a message..."
                         }
                         value={text}
                         onChange={handleInputChange}
                         disabled={
-                            group && 
-                            !group.members.find(m => 
-                                m.user._id === useChatStore.getState().authUser?._id && 
+                            group &&
+                            !group.members.find(m =>
+                                m.user._id === useAuthStore.getState().authUser?._id &&
                                 m.isActive
                             )?.canChat
                         }
                     />
+
+                    {
+                        showEmojiPicker && (
+                            <EmojiPicker
+                                onEmojiClick={handleEmojiClick}
+                                onClose={() => setShowEmojiPicker(false)}
+                            />
+                        )
+                    }
+                    {
+                        showGifPicker && (
+                            <GifPicker
+                                onGifSelect={handleGifSelect}
+                                onClose={() => setShowGifPicker(false)}
+                            />
+                        )
+                    }
 
                     {/* File Upload */}
                     <input
@@ -366,16 +430,16 @@ const MessageInput = ({
                         selectedEmotion={selectedEmotion}
                         onEmotionChange={setSelectedEmotion}
                         disabled={
-                            group && 
-                            !group.members.find(m => 
-                                m.user._id === useChatStore.getState().authUser?._id && 
+                            group &&
+                            !group.members.find(m =>
+                                m.user._id === useAuthStore.getState().authUser?._id &&
                                 m.isActive
                             )?.canChat
                         }
                     />
                 </div>
 
-                {/* Nút + để mở tiện ích */}
+                {/* Nút + để mở tiện ích (không chứa Integrations) */}
                 <div className="relative z-30">
                     <button
                         type="button"
@@ -387,15 +451,23 @@ const MessageInput = ({
                         <Plus size={22} />
                     </button>
                     {/* Circle menu tiện ích */}
-                    <div className={clsx(
-                        "fixed left-0 top-0 w-full h-full flex items-end justify-center z-50 pointer-events-none",
-                        showActions && "pointer-events-auto"
-                    )}>
-                        <div className={clsx(
-                            "absolute bottom-20 right-8 sm:right-16 md:right-32 lg:right-64 flex items-center justify-center",
-                            "transition-all duration-300",
-                            showActions ? "opacity-100 scale-100" : "opacity-0 scale-90"
-                        )} style={{width: 180, height: 180}}>
+                    <div
+                        ref={actionsOverlayRef}
+                        onMouseDown={(e) => {
+                            if (e.target === actionsOverlayRef.current) setShowActions(false);
+                        }}
+                        className={clsx(
+                            "fixed left-0 top-0 w-full h-full flex items-end justify-center z-50 pointer-events-none",
+                            showActions && "pointer-events-auto"
+                        )}
+                    >
+                        <div
+                            onMouseDown={(e) => e.stopPropagation()}
+                            className={clsx(
+                                "absolute bottom-20 right-8 sm:right-16 md:right-32 lg:right-64 flex items-center justify-center",
+                                "transition-all duration-300",
+                                showActions ? "opacity-100 scale-100" : "opacity-0 scale-90"
+                            )} style={{ width: 180, height: 180 }}>
                             {/* Circle icons */}
                             {ACTIONS.filter(a => !a.groupOnly || group).map((action, idx, arr) => {
                                 const angle = (360 / arr.length) * idx - 90; // -90 để bắt đầu từ trên
@@ -416,7 +488,7 @@ const MessageInput = ({
                                         style={{
                                             left: 80 + x,
                                             top: 80 + y,
-                                            transitionDelay: showActions ? `${idx * 40}ms` : `${(arr.length-idx) * 30}ms`,
+                                            transitionDelay: showActions ? `${idx * 40}ms` : `${(arr.length - idx) * 30}ms`,
                                             transform: showActions
                                                 ? `translate(-50%, -50%) rotate(360deg)`
                                                 : `translate(-50%, -50%) rotate(0deg)`
@@ -437,6 +509,75 @@ const MessageInput = ({
                                 );
                             })}
                         </div>
+                    </div>
+                </div>
+
+                {/* Nút Integrations riêng + menu hình tam giác */}
+                <div className="relative z-30" ref={integrationsMenuRef}>
+                    <button
+                        type="button"
+                        className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200"
+                        onClick={() => setShowIntegrationsQuick(v => !v)}
+                        aria-label="Tích hợp"
+                    >
+                        <Puzzle size={20} />
+                    </button>
+                    {showIntegrationsQuick && (
+                        <div className="absolute bottom-12 right-0 w-32 h-24 pointer-events-auto">
+                            {/* Đỉnh tam giác */}
+                            <button
+                                type="button"
+                                className="btn btn-circle btn-sm absolute left-1/2 -translate-x-1/2 -top-2 bg-base-100 shadow border border-base-300"
+                                title="Google Drive"
+                                onClick={() => { setQuickOpen({ drive: true, trello: false, dropbox: false }); setShowIntegrationsQuick(false); }}
+                            >
+                                <Cloud size={16} />
+                            </button>
+                            {/* Góc trái dưới */}
+                            <button
+                                type="button"
+                                className="btn btn-circle btn-sm absolute left-2 bottom-0 bg-base-100 shadow border border-base-300"
+                                title="Trello"
+                                onClick={() => { setQuickOpen({ drive: false, trello: true, dropbox: false }); setShowIntegrationsQuick(false); }}
+                            >
+                                <ListTodo size={16} />
+                            </button>
+                            {/* Góc phải dưới */}
+                            <button
+                                type="button"
+                                className="btn btn-circle btn-sm absolute right-2 bottom-0 bg-base-100 shadow border border-base-300"
+                                title="Dropbox"
+                                onClick={() => { setQuickOpen({ drive: false, trello: false, dropbox: true }); setShowIntegrationsQuick(false); }}
+                            >
+                                <Box size={16} />
+                            </button>
+                        </div>
+                    )}
+                    {/* Hidden IntegrationsMenu chỉ để mở modal Drive/Trello/Dropbox theo quickOpen */}
+                    <div className="absolute right-0">
+                        <IntegrationsMenu
+                            noTrigger
+                            isOpen={false}
+                            onClose={() => { }}
+                            compact
+                            onFilePick={(file) => {
+                                setAttachments(prev => [...prev, {
+                                    file: file.url || file,
+                                    type: file.type || 'document',
+                                    filename: file.name || 'external-file',
+                                    size: file.size || 0,
+                                    preview: file.url || null
+                                }]);
+                                setQuickOpen({ drive: false, trello: false, dropbox: false });
+                            }}
+                            onTaskCreate={(task) => {
+                                setText(prev => prev ? `${prev}\n[Trello] ${task.name}` : `[Trello] ${task.name}`);
+                                setQuickOpen({ drive: false, trello: false, dropbox: false });
+                            }}
+                            openGoogleDrive={quickOpen.drive}
+                            openTrello={quickOpen.trello}
+                            openDropbox={quickOpen.dropbox}
+                        />
                     </div>
                 </div>
 

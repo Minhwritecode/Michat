@@ -1,26 +1,27 @@
 import { useState } from "react";
-import { 
-    Pencil, 
-    Save, 
-    X, 
-    Image, 
-    FileText, 
-    Video, 
-    Link2, 
-    Bell, 
-    BellOff, 
-    Shield, 
-    ShieldOff, 
-    Trash2, 
-    Phone,
-    Video as VideoIcon,
-    MessageSquare,
-    Calendar,
-    Clock,
-    VolumeX
+import {
+  Pencil,
+  Save,
+  X,
+  Image,
+  FileText,
+  Video,
+  Link2,
+  Bell,
+  BellOff,
+  Shield,
+  ShieldOff,
+  Trash2,
+  Phone,
+  Video as VideoIcon,
+  MessageSquare,
+  Calendar,
+  Clock,
+  VolumeX
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axiosInstance from "../libs/axios";
+import { useChatStore } from "../stores/useChatStore";
 import React from "react";
 
 const TABS = [
@@ -40,7 +41,7 @@ const ACTIONS = [
   },
   {
     key: "video",
-    label: "Gọi video", 
+    label: "Gọi video",
     icon: <VideoIcon size={18} />,
     color: "text-blue-600",
     bgColor: "bg-blue-50 hover:bg-blue-100"
@@ -96,6 +97,7 @@ export default function UserInfoSidebar({
   isBlocked = false,
   isMuted = false
 }) {
+  const { getUsers, selectedUser, setSelectedUser } = useChatStore();
   const [tab, setTab] = useState("images");
   const [nickname, setNickname] = useState(initialNickname);
   const [editing, setEditing] = useState(false);
@@ -145,6 +147,31 @@ export default function UserInfoSidebar({
       toast.error("Cập nhật biệt danh thất bại!");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Update relationship label for friends
+  const LABEL_OPTIONS = [
+    { key: "family", label: "Gia đình" },
+    { key: "bestie", label: "Bạn thân" },
+    { key: "coworker", label: "Đồng nghiệp" },
+    { key: "friend", label: "Bạn bè" },
+  ];
+
+  const handleUpdateLabel = async (labelKey) => {
+    try {
+      await axiosInstance.put(`/api/auth/label/${user._id}`, { label: labelKey });
+      toast.success("Đã cập nhật nhóm quan hệ");
+      // Cập nhật ngay trong UI
+      if (selectedUser?._id === user._id) {
+        setSelectedUser({ ...selectedUser, label: labelKey, relation: 'friend' });
+      }
+      // Refresh Sidebar list để filter hoạt động
+      await getUsers();
+      // Thông báo toàn app (Sidebar, FriendsList) để tự refresh
+      window.dispatchEvent(new CustomEvent('label-updated', { detail: { userId: user._id, label: labelKey } }));
+    } catch {
+      toast.error("Cập nhật thất bại");
     }
   };
 
@@ -206,7 +233,7 @@ export default function UserInfoSidebar({
 
   return (
     <>
-      <div className={`fixed top-0 right-0 w-full max-w-sm h-full bg-base-100 shadow-2xl z-50 flex flex-col transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`} style={{borderTopLeftRadius: 24, borderBottomLeftRadius: 24}}>
+      <div className={`fixed top-0 right-0 w-full max-w-sm h-full bg-base-100 shadow-2xl z-50 flex flex-col transition-transform duration-300 ${open ? 'translate-x-0' : 'translate-x-full'}`} style={{ borderTopLeftRadius: 24, borderBottomLeftRadius: 24 }}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-base-300 bg-base-100/80 backdrop-blur-md">
           <h2 className="font-bold text-lg">Thông tin người dùng</h2>
@@ -311,6 +338,19 @@ export default function UserInfoSidebar({
               </button>
             ))}
           </div>
+          {/* Relationship label (visible only when friend) */}
+          {(user.relation === 'friend' || selectedUser?.relation === 'friend') && (
+            <div className="mt-4">
+              <div className="text-sm font-semibold mb-2 text-base-content/70">Nhóm quan hệ</div>
+              <div className="flex flex-wrap gap-2">
+                {LABEL_OPTIONS.map(opt => (
+                  <button key={opt.key} className={`btn btn-xs ${(user.label || selectedUser?.label) === opt.key ? 'btn-primary' : 'btn-outline'}`} onClick={() => handleUpdateLabel(opt.key)}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Tabs */}
@@ -404,13 +444,13 @@ export default function UserInfoSidebar({
               Bạn có chắc chắn muốn xóa toàn bộ cuộc trò chuyện với <b>{user.fullName}</b>? Tất cả tin nhắn sẽ bị mất vĩnh viễn.
             </p>
             <div className="flex gap-3">
-              <button 
+              <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="btn btn-ghost flex-1"
               >
                 Hủy
               </button>
-              <button 
+              <button
                 onClick={handleDeleteConversation}
                 className="btn btn-error flex-1"
               >
@@ -439,19 +479,19 @@ export default function UserInfoSidebar({
               </div>
             </div>
             <p className="text-base-content/80 mb-6">
-              {isBlocked 
+              {isBlocked
                 ? `Bạn có chắc chắn muốn bỏ chặn ${user.fullName}?`
                 : `Bạn có chắc chắn muốn chặn ${user.fullName}? Họ sẽ không thể nhắn tin hoặc gọi cho bạn.`
               }
             </p>
             <div className="flex gap-3">
-              <button 
+              <button
                 onClick={() => setShowBlockConfirm(false)}
                 className="btn btn-ghost flex-1"
               >
                 Hủy
               </button>
-              <button 
+              <button
                 onClick={handleBlockUser}
                 className={`btn flex-1 ${isBlocked ? 'btn-success' : 'btn-error'}`}
               >

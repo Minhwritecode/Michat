@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useRef, useEffect } from "react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import {
@@ -16,53 +17,82 @@ import {
     X,
     Users,
     User,
-    Trash2
+    Trash2,
+    Music
 } from "lucide-react";
 import toast from "react-hot-toast";
 import LinkPreview from "../LinkPreview";
 import axios from "../../libs/axios";
 
 const EMOTION_STYLES = {
-  happy: "bg-yellow-100 text-yellow-800 border-yellow-200 shadow-yellow-200/50",
-  love: "bg-pink-100 text-pink-800 border-pink-200 shadow-pink-200/50",
-  sad: "bg-blue-100 text-blue-800 border-blue-200 shadow-blue-200/50",
-  angry: "bg-red-100 text-red-800 border-red-200 shadow-red-200/50",
-  neutral: "",
-  excited: "bg-orange-100 text-orange-800 border-orange-200 shadow-orange-200/50",
-  special: "bg-purple-100 text-purple-800 border-purple-200 shadow-purple-200/50"
+    happy: "bg-yellow-100 text-yellow-800 border-yellow-200 shadow-yellow-200/50",
+    love: "bg-pink-100 text-pink-800 border-pink-200 shadow-pink-200/50",
+    sad: "bg-blue-100 text-blue-800 border-blue-200 shadow-blue-200/50",
+    angry: "bg-red-100 text-red-800 border-red-200 shadow-red-200/50",
+    neutral: "",
+    excited: "bg-orange-100 text-orange-800 border-orange-200 shadow-orange-200/50",
+    special: "bg-purple-100 text-purple-800 border-purple-200 shadow-purple-200/50"
 };
 
 const EMOTION_ICONS = {
-  happy: "😊",
-  love: "❤️",
-  sad: "😢",
-  angry: "😠",
-  neutral: "",
-  excited: "⚡",
-  special: "⭐"
+    happy: "😊",
+    love: "❤️",
+    sad: "😢",
+    angry: "😠",
+    neutral: "",
+    excited: "⚡",
+    special: "⭐"
 };
 
 const REACTIONS = [
-  { emoji: "❤️", label: "Love" },
-  { emoji: "👍", label: "Like" },
-  { emoji: "👎", label: "Dislike" },
-  { emoji: "😂", label: "Laugh" },
-  { emoji: "😮", label: "Wow" },
-  { emoji: "😢", label: "Sad" },
-  { emoji: "😡", label: "Angry" }
+    { emoji: "❤️", label: "Love" },
+    { emoji: "👍", label: "Like" },
+    { emoji: "😂", label: "Laugh" },
+    { emoji: "😮", label: "Wow" },
+    { emoji: "😢", label: "Sad" },
+    { emoji: "😡", label: "Angry" }
 ];
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error("Lỗi trong component:", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="p-3 bg-red-100 text-red-700 rounded-lg">
+                    Đã xảy ra lỗi khi hiển thị nội dung này
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
 
 const Message = ({ message, onReply, onEdit, onForward }) => {
     const { authUser } = useAuthStore();
     const [showContextMenu, setShowContextMenu] = useState(false);
     const [showReactions, setShowReactions] = useState(false);
     const [showForwardModal, setShowForwardModal] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editText, setEditText] = useState(message.text || "");
     const [isHovered, setIsHovered] = useState(false);
     const contextMenuRef = useRef(null);
     const messageRef = useRef(null);
     const isOwnMessage = message.senderId._id === authUser._id;
     const [translated, setTranslated] = useState(null);
     const [translating, setTranslating] = useState(false);
+    const [localReactions, setLocalReactions] = useState(message.reactions || []);
 
     // Close context menu when clicking outside
     useEffect(() => {
@@ -91,9 +121,28 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
             if (!response.ok) throw new Error('Failed to add reaction');
 
             setShowReactions(false);
+            // Sync with server response to ensure consistency
+            const updated = await response.json();
+            setLocalReactions(updated.reactions || []);
             toast.success('Đã thêm cảm xúc!');
         } catch {
             toast.error('Thêm cảm xúc thất bại!');
+        }
+    };
+
+    const submitEdit = async () => {
+        try {
+            const response = await fetch(`/api/messages/edit/${message._id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: editText }),
+                credentials: 'include'
+            });
+            if (!response.ok) throw new Error('Failed to edit message');
+            setIsEditing(false);
+            toast.success('Đã cập nhật tin nhắn');
+        } catch (e) {
+            toast.error('Cập nhật thất bại');
         }
     };
 
@@ -121,7 +170,7 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
 
     const handleDelete = async () => {
         if (!confirm("Bạn có chắc chắn muốn xóa tin nhắn này?")) return;
-        
+
         try {
             const response = await fetch(`/api/messages/${message._id}`, {
                 method: 'DELETE',
@@ -170,9 +219,9 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
         if (message.replyTo) {
             const originalMessageElement = document.querySelector(`[data-message-id="${message.replyTo._id}"]`);
             if (originalMessageElement) {
-                originalMessageElement.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'center' 
+                originalMessageElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
                 });
                 originalMessageElement.classList.add('highlight');
                 setTimeout(() => originalMessageElement.classList.remove('highlight'), 2000);
@@ -194,95 +243,171 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
     };
 
     const renderAttachment = (attachment) => {
+        console.log('Attachment data:', JSON.stringify(attachment, null, 2));
+
+        if (!attachment) return null;
+
+        // Xử lý URL/file source
+        const fileSrc = attachment.file || attachment.url;
+        if (!fileSrc) return null;
+
+        // Thêm timestamp để tránh cache
+        const cacheBusterSrc = `${fileSrc}${fileSrc.includes('?') ? '&' : '?'}t=${new Date().getTime()}`;
+
+        // Xử lý hiển thị theo loại file
         switch (attachment.type) {
             case 'image':
-                return (
-                    <div className="relative group">
-                        <img
-                            src={attachment.url}
-                            alt={attachment.filename}
-                            className="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity duration-200"
-                            onClick={() => window.open(attachment.url, '_blank')}
-                        />
-                        <button
-                            onClick={() => handleDownload(attachment)}
-                            className="absolute top-2 right-2 btn btn-circle btn-xs bg-base-300/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                        >
-                            <Download size={12} />
-                        </button>
-                    </div>
-                );
             case 'gif':
                 return (
                     <div className="relative group">
                         <img
-                            src={attachment.url}
-                            alt={attachment.filename}
-                            className="max-w-xs rounded-lg cursor-pointer hover:opacity-90 transition-opacity duration-200"
-                            onClick={() => window.open(attachment.url, '_blank')}
+                            src={cacheBusterSrc}
+                            alt={attachment.filename || "Image attachment"}
+                            className="max-w-full md:max-w-xs max-h-96 rounded-lg cursor-pointer bg-base-200 object-contain"
+                            onClick={() => window.open(fileSrc, '_blank')}
+                            onError={(e) => {
+                                console.error("Failed to load image:", fileSrc);
+                                e.target.src = '/image-placeholder.png'; // Fallback image
+                                e.target.classList.add('bg-error/10'); // Highlight lỗi
+                            }}
+                            loading="lazy"
                         />
-                        <button
-                            onClick={() => handleDownload(attachment)}
-                            className="absolute top-2 right-2 btn btn-circle btn-xs bg-base-300/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                        >
-                            <Download size={12} />
-                        </button>
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDownload(attachment);
+                                }}
+                                className="btn btn-circle btn-sm bg-base-100/90 shadow-md"
+                                title="Tải xuống"
+                            >
+                                <Download size={14} />
+                            </button>
+                        </div>
+                        {(attachment.caption || attachment.size) && (
+                            <div className="text-xs mt-1 text-base-content/70 truncate">
+                                {attachment.caption || formatFileSize(attachment.size)}
+                            </div>
+                        )}
                     </div>
                 );
+
             case 'video':
                 return (
                     <div className="relative group">
                         <video
                             controls
-                            className="max-w-xs rounded-lg"
+                            className="max-w-full md:max-w-xs rounded-lg bg-black"
                             preload="metadata"
+                            poster={attachment.thumbnail || '/video-placeholder.png'}
                         >
-                            <source src={attachment.url} type="video/mp4" />
+                            <source src={cacheBusterSrc} type={`video/${attachment.format || 'mp4'}`} />
+                            Trình duyệt không hỗ trợ video
                         </video>
-                        <button
-                            onClick={() => handleDownload(attachment)}
-                            className="absolute top-2 right-2 btn btn-circle btn-xs bg-base-300/80 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                        >
-                            <Download size={12} />
-                        </button>
+                        <div className="absolute top-2 right-2 flex gap-2">
+                            <button
+                                onClick={() => handleDownload(attachment)}
+                                className="btn btn-circle btn-xs bg-base-100/90 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Tải xuống"
+                            >
+                                <Download size={12} />
+                            </button>
+                        </div>
                     </div>
                 );
+
             case 'audio':
                 return (
-                    <div className="flex items-center gap-2 p-2 bg-base-200 rounded-lg hover:bg-base-300 transition-colors duration-200">
-                        <Play size={16} />
-                        <audio controls className="flex-1">
-                            <source src={attachment.url} />
-                        </audio>
-                        {attachment.duration > 0 && (
-                            <span className="text-xs opacity-50">
-                                {Math.floor(attachment.duration / 60)}:{(attachment.duration % 60).toString().padStart(2, '0')}
-                            </span>
-                        )}
+                    <div className="flex items-center gap-3 p-3 bg-base-200 rounded-lg hover:bg-base-300 transition-colors w-full max-w-md">
+                        <div className="bg-primary/10 p-2 rounded-full">
+                            <Music size={18} className="text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">
+                                {attachment.filename || "Audio file"}
+                            </div>
+                            {attachment.duration > 0 && (
+                                <div className="text-xs text-base-content/50">
+                                    {formatDuration(attachment.duration)}
+                                    {attachment.size && ` • ${formatFileSize(attachment.size)}`}
+                                </div>
+                            )}
+                        </div>
+                        <audio controls className="hidden" src={fileSrc} />
                         <button
                             onClick={() => handleDownload(attachment)}
-                            className="btn btn-circle btn-xs hover:scale-110 transition-transform duration-200"
+                            className="btn btn-circle btn-sm btn-ghost"
+                            title="Tải xuống"
                         >
-                            <Download size={12} />
+                            <Download size={16} />
                         </button>
                     </div>
                 );
+
             case 'document':
                 return (
-                    <div className="flex items-center gap-2 p-3 bg-base-200 rounded-lg hover:bg-base-300 transition-colors duration-200">
-                        <FileText size={20} />
-                        <span className="flex-1 text-sm">{attachment.filename}</span>
+                    <div
+                        className="flex items-center gap-3 p-3 bg-base-200 rounded-lg hover:bg-base-300 transition-colors cursor-pointer w-full max-w-md"
+                        onClick={() => handleDownload(attachment)}
+                    >
+                        <div className="bg-primary/10 p-2 rounded-full">
+                            <FileText size={18} className="text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">
+                                {attachment.filename || "Document"}
+                            </div>
+                            <div className="text-xs text-base-content/50">
+                                {attachment.format?.toUpperCase() || "FILE"}
+                                {attachment.size && ` • ${formatFileSize(attachment.size)}`}
+                            </div>
+                        </div>
                         <button
-                            onClick={() => handleDownload(attachment)}
-                            className="btn btn-circle btn-xs hover:scale-110 transition-transform duration-200"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownload(attachment);
+                            }}
+                            className="btn btn-circle btn-sm btn-ghost"
+                            title="Tải xuống"
                         >
-                            <Download size={12} />
+                            <Download size={16} />
                         </button>
                     </div>
                 );
+
             default:
-                return null;
+                return (
+                    <div className="p-3 bg-base-200 rounded-lg flex items-center gap-3">
+                        <FileText size={18} />
+                        <div className="flex-1">
+                            <div className="font-medium">Unknown file type</div>
+                            <div className="text-sm opacity-70">
+                                {attachment.filename || "File"}
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => handleDownload(attachment)}
+                            className="btn btn-sm"
+                        >
+                            Download
+                        </button>
+                    </div>
+                );
         }
+    };
+
+    // Hàm hỗ trợ định dạng
+    const formatFileSize = (bytes) => {
+        if (!bytes) return "";
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+
+    const formatDuration = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     const getEmotionStyle = () => {
@@ -297,7 +422,7 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
 
     return (
         <>
-            <div 
+            <div
                 ref={messageRef}
                 data-message-id={message._id}
                 className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4 group`}
@@ -307,11 +432,10 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
                 <div className={`relative max-w-xs lg:max-w-md xl:max-w-lg ${isOwnMessage ? 'order-2' : 'order-1'}`}>
                     {/* Message Content */}
                     <div
-                        className={`p-3 rounded-lg transition-all duration-200 hover:shadow-md ${
-                            isOwnMessage
-                                ? `bg-primary text-primary-content hover:bg-primary/90 ${getEmotionStyle()}`
-                                : `bg-base-200 hover:bg-base-300 ${getEmotionStyle()}`
-                        }`}
+                        className={`p-3 rounded-lg transition-all duration-200 hover:shadow-md relative ${isOwnMessage
+                            ? `bg-primary text-primary-content hover:bg-primary/90 ${getEmotionStyle()}`
+                            : `bg-base-200 hover:bg-base-300 ${getEmotionStyle()}`
+                            }`}
                         onContextMenu={(e) => {
                             e.preventDefault();
                             setShowContextMenu(true);
@@ -332,15 +456,22 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
                             </div>
                         )}
 
-                        {/* Message Text */}
-                        {message.text && (
-                            <div>
-                                <div className="mb-2 break-words">{message.text}</div>
-                                {/* Tìm link trong text và render LinkPreview */}
-                                {message.text.match(/https?:\/\/[^ \s]+/g)?.map((url, idx) => (
-                                    <LinkPreview key={idx} url={url} />
-                                ))}
+                        {/* Message Text + Inline Edit */}
+                        {isEditing ? (
+                            <div className="flex items-center gap-2">
+                                <input className="input input-sm input-bordered flex-1" value={editText} onChange={e => setEditText(e.target.value)} onKeyDown={e => e.key === 'Enter' && submitEdit()} />
+                                <button className="btn btn-sm btn-primary" onClick={submitEdit}>Lưu</button>
+                                <button className="btn btn-sm" onClick={() => { setIsEditing(false); setEditText(message.text || ''); }}>Huỷ</button>
                             </div>
+                        ) : (
+                            message.text && (
+                                <div>
+                                    <div className="mb-2 break-words">{message.text}</div>
+                                    {message.text.match(/https?:\/\/[^ \s]+/g)?.map((url, idx) => (
+                                        <LinkPreview key={idx} url={url} />
+                                    ))}
+                                </div>
+                            )
                         )}
 
                         {/* Attachments */}
@@ -360,13 +491,33 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
                                 </span>
                             )}
                         </div>
+
+                        {/* Reactions pill pinned inside bubble */}
+                        {localReactions && localReactions.length > 0 && (
+                            <div className={`absolute -bottom-2 ${isOwnMessage ? 'right-2' : 'left-2'} translate-y-full`}>
+                                <div className="flex items-center gap-1 bg-base-200 rounded-full px-2 py-1 shadow-sm">
+                                    {localReactions.map((reaction, index) => (
+                                        <span
+                                            key={index}
+                                            className="text-sm animate-bounce-in"
+                                            title={`${reaction.emoji} by ${reaction.userId?.fullName || 'Unknown'}`}
+                                        >
+                                            {reaction.emoji}
+                                        </span>
+                                    ))}
+                                    <span className="text-xs opacity-70 ml-1">
+                                        {localReactions.length}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Context Menu - Improved UI */}
                     {showContextMenu && (
                         <div
                             ref={contextMenuRef}
-                            className="absolute top-0 left-0 bg-base-100/95 backdrop-blur-md rounded-xl shadow-2xl border border-base-300 p-2 z-50 min-w-48 animate-modal-slide-in"
+                            className={`absolute top-0 ${isOwnMessage ? 'right-0' : 'left-0'} bg-base-100/95 backdrop-blur-md rounded-xl shadow-2xl border border-base-300 p-2 z-50 min-w-48 animate-modal-slide-in`}
                         >
                             <div className="flex items-center justify-between p-2 border-b border-base-300 mb-2">
                                 <span className="text-sm font-medium">Tùy chọn</span>
@@ -413,7 +564,7 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
 
                                 {isOwnMessage && (
                                     <button
-                                        onClick={handleEdit}
+                                        onClick={() => setIsEditing(true)}
                                         className="w-full text-left px-3 py-2 hover:bg-base-200 rounded-lg flex items-center gap-3 transition-colors duration-150"
                                     >
                                         <Edit size={16} />
@@ -455,26 +606,16 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
 
                     {/* Reactions Picker - Improved UI */}
                     {showReactions && (
-                        <div className="absolute bottom-full left-0 mb-2 bg-base-100/95 backdrop-blur-md rounded-xl shadow-2xl border border-base-300 p-3 z-50 animate-modal-slide-in">
-                            <div className="flex items-center justify-between mb-3">
-                                <span className="text-sm font-medium">Thả cảm xúc</span>
-                                <button
-                                    onClick={() => setShowReactions(false)}
-                                    className="btn btn-circle btn-xs btn-ghost"
-                                >
-                                    <X size={12} />
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-4 gap-2">
+                        <div className="absolute bottom-full left-0 mb-2 bg-base-100/95 backdrop-blur-md rounded-full shadow-2xl border border-base-300 p-1 z-50 animate-modal-slide-in">
+                            <div className="flex items-center gap-1 px-1 py-1">
                                 {REACTIONS.map((reaction, index) => (
                                     <button
                                         key={index}
-                                        onClick={() => handleReaction(reaction.emoji)}
-                                        className="p-3 hover:bg-base-200 rounded-lg text-lg hover:scale-110 transition-all duration-150 flex flex-col items-center gap-1"
+                                        onClick={() => { handleReaction(reaction.emoji); setShowReactions(false); }}
+                                        className="w-8 h-8 flex items-center justify-center text-lg hover:scale-110 transition-all duration-150 rounded-full hover:bg-base-200"
                                         title={reaction.label}
                                     >
                                         <span>{reaction.emoji}</span>
-                                        <span className="text-xs opacity-70">{reaction.label}</span>
                                     </button>
                                 ))}
                             </div>
@@ -482,9 +623,7 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
                     )}
 
                     {/* Quick Actions (visible on hover) */}
-                    <div className={`absolute -top-2 -right-2 transition-all duration-200 ${
-                        isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
-                    }`}>
+                    <div className={`absolute -top-2 ${isOwnMessage ? '-left-2' : '-right-2'} transition-all duration-200 ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
                         <button
                             onClick={() => setShowContextMenu(true)}
                             className="btn btn-circle btn-xs bg-base-100 hover:bg-base-200 shadow-lg border border-base-300"
@@ -503,25 +642,7 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
                 </div>
             </div>
 
-            {/* Reactions Display - Under message like Messenger */}
-            {message.reactions && message.reactions.length > 0 && (
-                <div className={`flex justify-center mb-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                    <div className="flex items-center gap-1 bg-base-200 rounded-full px-2 py-1 shadow-sm">
-                        {message.reactions.map((reaction, index) => (
-                            <span
-                                key={index}
-                                className="text-sm animate-bounce-in"
-                                title={`${reaction.emoji} by ${reaction.userId?.fullName || 'Unknown'}`}
-                            >
-                                {reaction.emoji}
-                            </span>
-                        ))}
-                        <span className="text-xs opacity-70 ml-1">
-                            {message.reactions.length}
-                        </span>
-                    </div>
-                </div>
-            )}
+            {/* Reactions display handled inside bubble */}
 
             {/* Read Receipts - Show avatars of users who read the message */}
             {isOwnMessage && message.readBy && message.readBy.length > 0 && (
@@ -529,7 +650,7 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
                     <div className="flex items-center gap-1 bg-base-200/80 backdrop-blur-sm rounded-full px-2 py-1 shadow-sm">
                         <span className="text-xs text-base-content/70 mr-1">Đã đọc</span>
                         <div className="flex -space-x-1">
-                            {message.readBy.slice(0, 3).map((reader, index) => (
+                            {message.readBy.slice(0, 3).map((reader) => (
                                 <img
                                     key={reader._id || reader}
                                     src={reader.profilePic || "/avatar.png"}
@@ -550,11 +671,13 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
 
             {/* Forward Modal */}
             {showForwardModal && (
-                <ForwardModal
-                    message={message}
-                    onClose={() => setShowForwardModal(false)}
-                    onForward={onForward}
-                />
+                <ErrorBoundary>
+                    <ForwardModal
+                        message={message}
+                        onClose={() => setShowForwardModal(false)}
+                        onForward={onForward}
+                    />
+                </ErrorBoundary>
             )}
         </>
     );
@@ -567,45 +690,51 @@ const ForwardModal = ({ message, onClose, onForward }) => {
     const [activeTab, setActiveTab] = useState("users");
     const [users, setUsers] = useState([]);
     const [groups, setGroups] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Fetch users and groups
         const fetchData = async () => {
+            setLoading(true);
+            setError(null);
             try {
                 const [usersRes, groupsRes] = await Promise.all([
-                    fetch("/api/users", { credentials: "include" }),
+                    fetch("/api/auth/users-with-unread", { credentials: "include" }),
                     fetch("/api/groups/my-groups", { credentials: "include" })
                 ]);
-                
-                if (usersRes.ok) {
-                    const usersData = await usersRes.json();
-                    setUsers(usersData);
-                }
-                
-                if (groupsRes.ok) {
-                    const groupsData = await groupsRes.json();
-                    setGroups(groupsData);
-                }
-            } catch (error) {
-                console.error("Error fetching data:", error);
+
+                if (!usersRes.ok) throw new Error("Không thể tải danh sách người dùng");
+                const usersData = await usersRes.json();
+                setUsers(Array.isArray(usersData) ? usersData : []);
+
+                if (!groupsRes.ok) throw new Error("Không thể tải danh sách nhóm");
+                const groupsData = await groupsRes.json();
+                setGroups(Array.isArray(groupsData) ? groupsData : []);
+            } catch (err) {
+                console.error("Lỗi khi tải dữ liệu:", err);
+                setError(err.message);
+                setUsers([]);
+                setGroups([]);
+            } finally {
+                setLoading(false);
             }
         };
-        
+
         fetchData();
     }, []);
 
-    const filteredUsers = users.filter(user => 
-        user.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredUsers = users.filter(user =>
+        user?.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const filteredGroups = groups.filter(group => 
-        group.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredGroups = groups.filter(group =>
+        group?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleTargetToggle = (type, id) => {
         const target = `${type}:${id}`;
-        setSelectedTargets(prev => 
-            prev.includes(target) 
+        setSelectedTargets(prev =>
+            prev.includes(target)
                 ? prev.filter(t => t !== target)
                 : [...prev, target]
         );
@@ -625,20 +754,25 @@ const ForwardModal = ({ message, onClose, onForward }) => {
             toast.success(`Đã chuyển tiếp tin nhắn đến ${selectedTargets.length} nơi`);
             onClose();
         } catch (error) {
+            console.error("Lỗi khi chuyển tiếp:", error);
             toast.error("Chuyển tiếp tin nhắn thất bại!");
         }
     };
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-base-100 rounded-xl max-w-md w-full mx-4 max-h-[80vh] overflow-hidden">
+            <div className="bg-base-100 rounded-xl max-w-md w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-base-300">
                     <div className="flex items-center gap-3">
                         <Forward size={20} />
                         <h3 className="text-lg font-semibold">Chuyển tiếp tin nhắn</h3>
                     </div>
-                    <button onClick={onClose} className="btn btn-circle btn-sm btn-ghost">
+                    <button
+                        onClick={onClose}
+                        className="btn btn-circle btn-sm btn-ghost"
+                        aria-label="Đóng"
+                    >
                         <X size={16} />
                     </button>
                 </div>
@@ -651,21 +785,30 @@ const ForwardModal = ({ message, onClose, onForward }) => {
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="input input-bordered w-full"
+                        disabled={loading}
                     />
                 </div>
 
                 {/* Tabs */}
                 <div className="flex border-b border-base-300">
                     <button
-                        className={`flex-1 py-2 text-sm font-medium ${activeTab === "users" ? "border-b-2 border-primary text-primary" : "text-base-content/70"}`}
+                        className={`flex-1 py-2 text-sm font-medium flex items-center justify-center ${activeTab === "users"
+                            ? "border-b-2 border-primary text-primary"
+                            : "text-base-content/70 hover:bg-base-200"
+                            }`}
                         onClick={() => setActiveTab("users")}
+                        disabled={loading}
                     >
                         <User size={16} className="inline mr-2" />
                         Bạn bè
                     </button>
                     <button
-                        className={`flex-1 py-2 text-sm font-medium ${activeTab === "groups" ? "border-b-2 border-primary text-primary" : "text-base-content/70"}`}
+                        className={`flex-1 py-2 text-sm font-medium flex items-center justify-center ${activeTab === "groups"
+                            ? "border-b-2 border-primary text-primary"
+                            : "text-base-content/70 hover:bg-base-200"
+                            }`}
                         onClick={() => setActiveTab("groups")}
+                        disabled={loading}
                     >
                         <Users size={16} className="inline mr-2" />
                         Nhóm
@@ -673,54 +816,85 @@ const ForwardModal = ({ message, onClose, onForward }) => {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto max-h-96">
-                    {activeTab === "users" ? (
+                <div className="flex-1 overflow-y-auto">
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center p-8">
+                            <span className="loading loading-spinner loading-lg text-primary"></span>
+                            <p className="mt-4 text-base-content/70">Đang tải dữ liệu...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="p-4 text-center text-error">
+                            <p>Đã xảy ra lỗi: {error}</p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="btn btn-sm btn-ghost mt-2"
+                            >
+                                Thử lại
+                            </button>
+                        </div>
+                    ) : activeTab === "users" ? (
                         <div className="p-4 space-y-2">
-                            {filteredUsers.map(user => (
-                                <div
-                                    key={user._id}
-                                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-base-200 transition-colors ${
-                                        selectedTargets.includes(`user:${user._id}`) ? 'bg-primary/10' : ''
-                                    }`}
-                                    onClick={() => handleTargetToggle("user", user._id)}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedTargets.includes(`user:${user._id}`)}
-                                        onChange={() => {}}
-                                        className="checkbox checkbox-sm"
-                                    />
-                                    <img
-                                        src={user.profilePic || "/avatar.png"}
-                                        alt={user.fullName}
-                                        className="w-8 h-8 rounded-full object-cover"
-                                    />
-                                    <span className="flex-1">{user.fullName}</span>
-                                </div>
-                            ))}
+                            {filteredUsers.length === 0 ? (
+                                <p className="text-center py-4 text-base-content/70">
+                                    {searchTerm ? "Không tìm thấy người dùng phù hợp" : "Không có người dùng nào"}
+                                </p>
+                            ) : (
+                                filteredUsers.map(user => (
+                                    <div
+                                        key={user._id}
+                                        className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-base-200 transition-colors ${selectedTargets.includes(`user:${user._id}`) ? 'bg-primary/10' : ''
+                                            }`}
+                                        onClick={() => handleTargetToggle("user", user._id)}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedTargets.includes(`user:${user._id}`)}
+                                            readOnly
+                                            className="checkbox checkbox-sm"
+                                        />
+                                        <img
+                                            src={user.profilePic || "/avatar.png"}
+                                            alt={user.fullName}
+                                            className="w-8 h-8 rounded-full object-cover"
+                                            onError={(e) => {
+                                                e.target.src = "/avatar.png";
+                                            }}
+                                        />
+                                        <span className="flex-1">{user.fullName}</span>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     ) : (
                         <div className="p-4 space-y-2">
-                            {filteredGroups.map(group => (
-                                <div
-                                    key={group._id}
-                                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-base-200 transition-colors ${
-                                        selectedTargets.includes(`group:${group._id}`) ? 'bg-primary/10' : ''
-                                    }`}
-                                    onClick={() => handleTargetToggle("group", group._id)}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedTargets.includes(`group:${group._id}`)}
-                                        onChange={() => {}}
-                                        className="checkbox checkbox-sm"
-                                    />
-                                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                                        <Users size={16} className="text-primary-content" />
+                            {filteredGroups.length === 0 ? (
+                                <p className="text-center py-4 text-base-content/70">
+                                    {searchTerm ? "Không tìm thấy nhóm phù hợp" : "Không có nhóm nào"}
+                                </p>
+                            ) : (
+                                filteredGroups.map(group => (
+                                    <div
+                                        key={group._id}
+                                        className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-base-200 transition-colors ${selectedTargets.includes(`group:${group._id}`) ? 'bg-primary/10' : ''
+                                            }`}
+                                        onClick={() => handleTargetToggle("group", group._id)}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedTargets.includes(`group:${group._id}`)}
+                                            readOnly
+                                            className="checkbox checkbox-sm"
+                                        />
+                                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                                            <Users size={16} className="text-primary-content" />
+                                        </div>
+                                        <span className="flex-1">{group.name}</span>
+                                        <span className="text-xs opacity-70">
+                                            {group.memberCount || 0} thành viên
+                                        </span>
                                     </div>
-                                    <span className="flex-1">{group.name}</span>
-                                </div>
-                            ))}
+                                ))
+                            )}
                         </div>
                     )}
                 </div>
@@ -732,15 +906,19 @@ const ForwardModal = ({ message, onClose, onForward }) => {
                             {selectedTargets.length} nơi được chọn
                         </span>
                         <div className="flex gap-2">
-                            <button onClick={onClose} className="btn btn-sm">
+                            <button
+                                onClick={onClose}
+                                className="btn btn-sm"
+                                disabled={loading}
+                            >
                                 Hủy
                             </button>
-                            <button 
-                                onClick={handleForward} 
+                            <button
+                                onClick={handleForward}
                                 className="btn btn-sm btn-primary"
-                                disabled={selectedTargets.length === 0}
+                                disabled={selectedTargets.length === 0 || loading}
                             >
-                                Chuyển tiếp
+                                {loading ? 'Đang xử lý...' : 'Chuyển tiếp'}
                             </button>
                         </div>
                     </div>

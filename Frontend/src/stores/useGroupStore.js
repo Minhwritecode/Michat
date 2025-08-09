@@ -46,12 +46,28 @@ const useGroupStore = create(
                 }
             },
 
+            // Fetch stats for current user's groups
+            fetchMyGroupStats: async () => {
+                try {
+                    set({ loading: true, error: null });
+                    const response = await axiosInstance.get("/api/groups/stats/me");
+                    set({ loading: false });
+                    return response.data.data;
+                } catch (error) {
+                    set({
+                        error: error.response?.data?.message || "Lỗi khi tải thống kê",
+                        loading: false
+                    });
+                    return { totalGroups: 0, messagesToday: 0, activeMembers: 0 };
+                }
+            },
+
             // Create new group
             createGroup: async (groupData) => {
                 try {
                     set({ loading: true, error: null });
                     const response = await axiosInstance.post("/api/groups", groupData);
-                    
+
                     const newGroup = response.data.data;
                     set(state => ({
                         groups: [newGroup, ...state.groups],
@@ -73,7 +89,7 @@ const useGroupStore = create(
                 try {
                     set({ loading: true, error: null });
                     const response = await axiosInstance.get(`/groups/${groupId}`);
-                    
+
                     const group = response.data.data;
                     set({ selectedGroup: group, loading: false });
                     return group;
@@ -91,11 +107,11 @@ const useGroupStore = create(
                 try {
                     set({ loading: true, error: null });
                     const response = await axiosInstance.put(`/groups/${groupId}`, updateData);
-                    
+
                     const updatedGroup = response.data.data;
                     set(state => ({
                         selectedGroup: state.selectedGroup?._id === groupId ? updatedGroup : state.selectedGroup,
-                        groups: state.groups.map(group => 
+                        groups: state.groups.map(group =>
                             group._id === groupId ? updatedGroup : group
                         ),
                         loading: false
@@ -116,11 +132,11 @@ const useGroupStore = create(
                 try {
                     set({ loading: true, error: null });
                     const response = await axiosInstance.post(`/groups/${groupId}/members`, { userIds });
-                    
+
                     const updatedGroup = response.data.data;
                     set(state => ({
                         selectedGroup: state.selectedGroup?._id === groupId ? updatedGroup : state.selectedGroup,
-                        groups: state.groups.map(group => 
+                        groups: state.groups.map(group =>
                             group._id === groupId ? updatedGroup : group
                         ),
                         loading: false
@@ -141,11 +157,11 @@ const useGroupStore = create(
                 try {
                     set({ loading: true, error: null });
                     const response = await axiosInstance.delete(`/groups/${groupId}/members/${memberId}`);
-                    
+
                     const updatedGroup = response.data.data;
                     set(state => ({
                         selectedGroup: state.selectedGroup?._id === groupId ? updatedGroup : state.selectedGroup,
-                        groups: state.groups.map(group => 
+                        groups: state.groups.map(group =>
                             group._id === groupId ? updatedGroup : group
                         ),
                         loading: false
@@ -166,11 +182,11 @@ const useGroupStore = create(
                 try {
                     set({ loading: true, error: null });
                     const response = await axiosInstance.put(`/groups/${groupId}/members/${memberId}/role`, { role });
-                    
+
                     const updatedGroup = response.data.data;
                     set(state => ({
                         selectedGroup: state.selectedGroup?._id === groupId ? updatedGroup : state.selectedGroup,
-                        groups: state.groups.map(group => 
+                        groups: state.groups.map(group =>
                             group._id === groupId ? updatedGroup : group
                         ),
                         loading: false
@@ -191,11 +207,11 @@ const useGroupStore = create(
                 try {
                     set({ loading: true, error: null });
                     const response = await axiosInstance.put(`/groups/${groupId}/members/${memberId}/chat`);
-                    
+
                     const updatedGroup = response.data.data;
                     set(state => ({
                         selectedGroup: state.selectedGroup?._id === groupId ? updatedGroup : state.selectedGroup,
-                        groups: state.groups.map(group => 
+                        groups: state.groups.map(group =>
                             group._id === groupId ? updatedGroup : group
                         ),
                         loading: false
@@ -216,7 +232,7 @@ const useGroupStore = create(
                 try {
                     set({ loading: true, error: null });
                     const response = await axiosInstance.post("/api/groups/join", { inviteCode });
-                    
+
                     const newGroup = response.data.data;
                     set(state => ({
                         groups: [newGroup, ...state.groups],
@@ -238,7 +254,7 @@ const useGroupStore = create(
                 try {
                     set({ loading: true, error: null });
                     const response = await axiosInstance.post(`/groups/${groupId}/invite-code`);
-                    
+
                     set({ loading: false });
                     return response.data.data.inviteCode;
                 } catch (error) {
@@ -255,7 +271,7 @@ const useGroupStore = create(
                 try {
                     set({ loading: true, error: null });
                     await axiosInstance.post(`/groups/${groupId}/leave`);
-                    
+
                     set(state => ({
                         groups: state.groups.filter(group => group._id !== groupId),
                         selectedGroup: state.selectedGroup?._id === groupId ? null : state.selectedGroup,
@@ -275,7 +291,7 @@ const useGroupStore = create(
                 try {
                     set({ loading: true, error: null });
                     await axiosInstance.delete(`/groups/${groupId}`);
-                    
+
                     set(state => ({
                         groups: state.groups.filter(group => group._id !== groupId),
                         selectedGroup: state.selectedGroup?._id === groupId ? null : state.selectedGroup,
@@ -295,7 +311,7 @@ const useGroupStore = create(
                 try {
                     set({ loading: true, error: null });
                     const response = await axiosInstance.get(`/groups/${groupId}/members`);
-                    
+
                     const { members } = response.data.data;
                     set({ groupMembers: members, loading: false });
                     return members;
@@ -334,7 +350,7 @@ const useGroupStore = create(
 
             isGroupMember: (groupId, userId) => {
                 const group = get().getGroupById(groupId);
-                return group?.members?.some(member => 
+                return group?.members?.some(member =>
                     member.user._id === userId && member.isActive
                 ) || false;
             },
@@ -342,14 +358,14 @@ const useGroupStore = create(
             isGroupAdmin: (groupId, userId) => {
                 const group = get().getGroupById(groupId);
                 if (!group) return false;
-                
-                return group.owner._id === userId || 
-                       group.admins?.some(admin => admin._id === userId) ||
-                       group.members?.some(member => 
-                           member.user._id === userId && 
-                           member.role === "admin" && 
-                           member.isActive
-                       );
+
+                return group.owner._id === userId ||
+                    group.admins?.some(admin => admin._id === userId) ||
+                    group.members?.some(member =>
+                        member.user._id === userId &&
+                        member.role === "admin" &&
+                        member.isActive
+                    );
             },
 
             isGroupOwner: (groupId, userId) => {

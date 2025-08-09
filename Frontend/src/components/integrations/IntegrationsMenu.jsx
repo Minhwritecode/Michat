@@ -1,21 +1,39 @@
-import { useState } from "react";
-import { 
-  MoreHorizontal, 
-  X, 
-  ExternalLink,
-  Settings,
-  Plus
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, ExternalLink } from "lucide-react";
 import { SiGoogle, SiTrello, SiDropbox } from "react-icons/si";
 import GoogleDrivePicker from "./GoogleDrivePicker";
 import TrelloTaskModal from "./TrelloTaskModal";
 import DropboxChooser from "./DropboxChooser";
 
-const IntegrationsMenu = ({ onFilePick, onTaskCreate }) => {
-  const [showMenu, setShowMenu] = useState(false);
+const IntegrationsMenu = ({
+  onFilePick,
+  onTaskCreate,
+  noTrigger = false,
+  isOpen = false,
+  onClose = () => { },
+  compact = false,
+  // external quick open flags
+  openGoogleDrive = false,
+  openTrello = false,
+  openDropbox = false,
+}) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const showMenu = noTrigger ? isOpen : internalOpen;
+  const setShowMenu = noTrigger ? (v) => (v ? null : onClose()) : setInternalOpen;
   const [showGoogleDrive, setShowGoogleDrive] = useState(false);
   const [showTrello, setShowTrello] = useState(false);
   const [showDropbox, setShowDropbox] = useState(false);
+
+  // Open modals from external triggers
+  useEffect(() => {
+    if (openGoogleDrive) setShowGoogleDrive(true);
+  }, [openGoogleDrive]);
+  useEffect(() => {
+    if (openTrello) setShowTrello(true);
+  }, [openTrello]);
+  useEffect(() => {
+    if (openDropbox) setShowDropbox(true);
+  }, [openDropbox]);
 
   const integrations = [
     {
@@ -60,16 +78,8 @@ const IntegrationsMenu = ({ onFilePick, onTaskCreate }) => {
   return (
     <>
       <div className="relative">
-        <button
-          onClick={() => setShowMenu(!showMenu)}
-          className="btn btn-circle btn-sm text-zinc-400 hover:text-zinc-200"
-          title="Tích hợp bên thứ ba"
-        >
-          <MoreHorizontal size={18} />
-        </button>
-
         {showMenu && (
-          <div className="absolute bottom-full right-0 mb-2 w-80 bg-base-100 rounded-xl shadow-lg border border-base-300 p-4 z-50">
+          <div className={`absolute ${compact ? 'bottom-12 right-0' : 'bottom-full right-0 mb-2'} ${compact ? 'w-64' : 'w-80'} bg-base-100 rounded-xl shadow-lg border border-base-300 p-4 z-50`}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg">Tích hợp bên thứ ba</h3>
               <button
@@ -98,9 +108,9 @@ const IntegrationsMenu = ({ onFilePick, onTaskCreate }) => {
                         {integration.description}
                       </div>
                     </div>
-                    <ExternalLink 
-                      size={16} 
-                      className="text-base-content/30 group-hover:text-base-content/60 transition-colors" 
+                    <ExternalLink
+                      size={16}
+                      className="text-base-content/30 group-hover:text-base-content/60 transition-colors"
                     />
                   </button>
                 );

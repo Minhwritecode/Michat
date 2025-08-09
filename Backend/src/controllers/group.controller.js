@@ -1,5 +1,6 @@
 import Group from "../models/group.model.js";
 import User from "../models/user.model.js";
+import Message from "../models/message.model.js";
 import { uploadToCloudinary } from "../libs/cloudinary.js";
 import { ApiError } from "../libs/utils.js";
 
@@ -206,7 +207,7 @@ export const addMember = async (req, res, next) => {
 
         // Filter out existing members
         const existingMemberIds = group.members.map(m => m.user.toString());
-        const uniqueNewMembers = newMembers.filter(m => 
+        const uniqueNewMembers = newMembers.filter(m =>
             !existingMemberIds.includes(m.user.toString())
         );
 
@@ -257,7 +258,7 @@ export const removeMember = async (req, res, next) => {
             throw new ApiError(400, "Bạn không thể tự xóa mình khỏi nhóm");
         }
 
-        const memberIndex = group.members.findIndex(m => 
+        const memberIndex = group.members.findIndex(m =>
             m.user.toString() === memberId && m.isActive
         );
 
@@ -361,6 +362,51 @@ export const generateInviteCode = async (req, res, next) => {
     }
 };
 
+// Get group stats for current user
+export const getGroupStats = async (req, res, next) => {
+    try {
+        const userId = req.user._id;
+
+        const groups = await Group.find({
+            "members.user": userId,
+            "members.isActive": true
+        }).select("_id members");
+
+        const totalGroups = groups.length;
+        const groupIds = groups.map(g => g._id);
+
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const messagesToday = await Message.countDocuments({
+            groupId: { $in: groupIds },
+            createdAt: { $gte: startOfDay, $lte: endOfDay }
+        });
+
+        const activeMemberIds = new Set();
+        for (const g of groups) {
+            (g.members || []).forEach(m => {
+                if (m.isActive) activeMemberIds.add(m.user.toString());
+            });
+        }
+        // exclude current user from active members count
+        activeMemberIds.delete(userId.toString());
+
+        res.status(200).json({
+            success: true,
+            data: {
+                totalGroups,
+                messagesToday,
+                activeMembers: activeMemberIds.size
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // Leave group
 export const leaveGroup = async (req, res, next) => {
     try {
@@ -381,7 +427,7 @@ export const leaveGroup = async (req, res, next) => {
             throw new ApiError(400, "Chủ nhóm không thể rời nhóm. Hãy chuyển quyền sở hữu trước");
         }
 
-        const memberIndex = group.members.findIndex(m => 
+        const memberIndex = group.members.findIndex(m =>
             m.user.toString() === userId.toString() && m.isActive
         );
 
@@ -477,7 +523,7 @@ export const updateMemberRole = async (req, res, next) => {
             throw new ApiError(400, "Không thể thay đổi vai trò của chủ nhóm");
         }
 
-        const memberIndex = group.members.findIndex(m => 
+        const memberIndex = group.members.findIndex(m =>
             m.user.toString() === memberId && m.isActive
         );
 
@@ -522,7 +568,7 @@ export const toggleMemberChat = async (req, res, next) => {
             throw new ApiError(400, "Không thể thay đổi quyền chat của chủ nhóm");
         }
 
-        const memberIndex = group.members.findIndex(m => 
+        const memberIndex = group.members.findIndex(m =>
             m.user.toString() === memberId && m.isActive
         );
 
@@ -541,8 +587,8 @@ export const toggleMemberChat = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            message: group.members[memberIndex].canChat 
-                ? "Đã cho phép thành viên chat" 
+            message: group.members[memberIndex].canChat
+                ? "Đã cho phép thành viên chat"
                 : "Đã tắt quyền chat của thành viên",
             data: group
         });
