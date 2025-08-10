@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Trash2, Eye, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "../../stores/useAuthStore";
 import toast from "react-hot-toast";
@@ -8,7 +8,43 @@ const StoryHistory = () => {
     const [stories, setStories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [viewer, setViewer] = useState(null);
     useAuthStore();
+
+    // Refs must be declared unconditionally before any early return
+    const scrollRef = useRef(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+    const cardWidthWithGap = 256 + 16; // w-64 + gap-4
+
+    const updateScrollState = useCallback(() => {
+        const el = scrollRef.current; if (!el) return;
+        setCanScrollLeft(el.scrollLeft > 0);
+        setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+    }, []);
+
+    const scrollByCols = (dir) => {
+        const el = scrollRef.current; if (!el) return;
+        el.scrollBy({ left: dir * cardWidthWithGap, behavior: 'smooth' });
+        setTimeout(updateScrollState, 250);
+    };
+
+    useEffect(() => {
+        updateScrollState();
+        const el = scrollRef.current; if (!el) return;
+        el.addEventListener('scroll', updateScrollState);
+        window.addEventListener('resize', updateScrollState);
+        return () => {
+            el.removeEventListener('scroll', updateScrollState);
+            window.removeEventListener('resize', updateScrollState);
+        };
+    }, [updateScrollState]);
+
+    // Recompute when stories list changes (after render)
+    useEffect(() => {
+        const t = setTimeout(updateScrollState, 50);
+        return () => clearTimeout(t);
+    }, [stories.length, updateScrollState]);
 
     // Fetch stories của user hiện tại - sử dụng useCallback để tránh re-create
     const fetchUserStories = useCallback(async () => {
@@ -67,8 +103,7 @@ const StoryHistory = () => {
 
     // Xem lại story (có thể mở modal xem chi tiết)
     const handleViewStory = (story) => {
-        // TODO: Implement modal xem story chi tiết
-        console.log("View story:", story);
+        setViewer(story);
     };
 
     const formatDate = (dateString) => {
@@ -132,21 +167,59 @@ const StoryHistory = () => {
                 </div>
             ) : (
                 <div className="relative">
-                    {/* Scroll Container */}
-                    <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                    {/* Overlay arrows */}
+                    {(stories.length > 4) && (
+                        <>
+                            <button
+                                className="flex absolute left-0 top-1/2 -translate-y-1/2 z-10 btn btn-circle btn-sm bg-base-100/90 border border-base-300 shadow"
+                                onClick={() => scrollByCols(-1)}
+                                aria-label="Scroll left"
+                                disabled={!canScrollLeft}
+                            >
+                                <ChevronLeft size={16} />
+                            </button>
+                            <button
+                                className="flex absolute right-0 top-1/2 -translate-y-1/2 z-10 btn btn-circle btn-sm bg-base-100/90 border border-base-300 shadow"
+                                onClick={() => scrollByCols(1)}
+                                aria-label="Scroll right"
+                                disabled={!canScrollRight}
+                            >
+                                <ChevronRight size={16} />
+                            </button>
+                        </>
+                    )}
+
+                    {/* Scroll Container: 4 per row visually using fixed card width (w-64) */}
+                    <div
+                        ref={scrollRef}
+                        className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
+                    >
                         {stories.map((story) => (
                             <div
                                 key={story._id}
-                                className="flex-shrink-0 w-64 bg-base-100 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
+                                className="flex-shrink-0 w-64 bg-base-100 rounded-xl border border-base-300 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 snap-start"
                             >
                                 {/* Story Media */}
-                                <div className="relative h-40 bg-gradient-to-br from-primary/20 to-secondary/20">
+                                <div className="relative h-40 bg-base-200">
                                     {story.media ? (
-                                        <img
-                                            src={story.media}
-                                            alt="Story"
-                                            className="w-full h-full object-cover"
-                                        />
+                                        /\.(mp4|webm|ogg)(\?|$)/i.test(story.media) ? (
+                                            <video
+                                                src={story.media}
+                                                className="w-full h-full object-cover"
+                                                preload="metadata"
+                                                muted
+                                                playsInline
+                                                onMouseEnter={e => e.currentTarget.play()}
+                                                onMouseLeave={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                                            />
+                                        ) : (
+                                            <img
+                                                src={story.media}
+                                                alt="Story"
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => { e.currentTarget.src = '/avatar.png'; }}
+                                            />
+                                        )
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-base-content/50">
                                             <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,14 +232,14 @@ const StoryHistory = () => {
                                     <div className="absolute top-2 right-2 flex gap-1">
                                         <button
                                             onClick={() => handleViewStory(story)}
-                                            className="btn btn-circle btn-xs bg-base-100/80 hover:bg-base-100"
+                                            className="btn btn-circle btn-xs bg-base-100/90 border border-base-300 hover:bg-base-100"
                                             title="Xem chi tiết"
                                         >
                                             <Eye size={12} />
                                         </button>
                                         <button
                                             onClick={() => handleDeleteStory(story._id)}
-                                            className="btn btn-circle btn-xs bg-error/80 hover:bg-error text-error-content"
+                                            className="btn btn-circle btn-xs bg-error/90 hover:bg-error text-error-content"
                                             title="Xóa story"
                                         >
                                             <Trash2 size={12} />
@@ -177,13 +250,13 @@ const StoryHistory = () => {
                                 {/* Story Content */}
                                 <div className="p-4">
                                     {story.text && (
-                                        <p className="text-sm mb-2 line-clamp-2">
+                                        <p className="text-sm mb-2 line-clamp-2 leading-5">
                                             {story.text}
                                         </p>
                                     )}
 
-                                    <div className="flex items-center justify-between text-xs text-base-content/60">
-                                        <span>{formatDate(story.createdAt)}</span>
+                                    <div className="flex items-center justify-between text-xs text-base-content/60 pt-1">
+                                        <span className="truncate">{formatDate(story.createdAt)}</span>
                                         {story.reactions?.length > 0 && (
                                             <span className="flex items-center gap-1">
                                                 <span>❤️</span>
@@ -196,18 +269,18 @@ const StoryHistory = () => {
                         ))}
                     </div>
 
-                    {/* Scroll Indicators (simple dots and arrows) */}
-                    <div className="flex justify-center mt-4 gap-2">
-                        <button className="btn btn-circle btn-sm btn-ghost">
-                            <ChevronLeft size={16} />
+                    {/* Scroll Controls indicators */}
+                    <div className="flex justify-center mt-3 gap-2">
+                        <button className="btn btn-circle btn-xs btn-ghost" onClick={() => scrollByCols(-1)} disabled={!canScrollLeft}>
+                            <ChevronLeft size={14} />
                         </button>
                         <div className="flex gap-1">
-                            {Array.from({ length: Math.ceil(stories.length / 3) }, (_, i) => (
+                            {Array.from({ length: Math.max(1, Math.ceil(stories.length / 4)) }, (_, i) => (
                                 <div key={i} className="w-2 h-2 rounded-full bg-base-300"></div>
                             ))}
                         </div>
-                        <button className="btn btn-circle btn-sm btn-ghost">
-                            <ChevronRight size={16} />
+                        <button className="btn btn-circle btn-xs btn-ghost" onClick={() => scrollByCols(1)} disabled={!canScrollRight}>
+                            <ChevronRight size={14} />
                         </button>
                     </div>
                 </div>
@@ -222,6 +295,30 @@ const StoryHistory = () => {
                     fetchUserStories();
                 }}
             />
+
+            {/* Viewer Modal */}
+            {viewer && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setViewer(null)}>
+                    <div className="bg-base-100 rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-3 border-b border-base-300 flex items-center justify-between">
+                            <div className="font-semibold">Story chi tiết</div>
+                            <button className="btn btn-ghost btn-sm" onClick={() => setViewer(null)}>Đóng</button>
+                        </div>
+                        <div className="p-0">
+                            {viewer.media ? (/\.(mp4|webm|ogg)(\?|$)/i.test(viewer.media) ? (
+                                <video src={viewer.media} controls className="w-full max-h-[70vh] object-contain bg-black" />
+                            ) : (
+                                <img src={viewer.media} alt="story" className="w-full max-h-[70vh] object-contain bg-base-200" />
+                            )) : (
+                                <div className="w-full h-64 flex items-center justify-center text-base-content/50">Không có media</div>
+                            )}
+                            {viewer.text && (
+                                <div className="px-6 py-4 border-t border-base-200 text-sm leading-6">{viewer.text}</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

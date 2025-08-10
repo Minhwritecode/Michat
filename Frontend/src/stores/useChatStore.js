@@ -21,6 +21,9 @@ export const useChatStore = create((set, get) => ({
             return [];
         }
     })(),
+    // Notifications cache
+    notifications: [],
+    unreadNotifications: 0,
 
     getUsers: async () => {
         set({ isUsersLoading: true });
@@ -218,6 +221,27 @@ export const useChatStore = create((set, get) => ({
         const currentlyMuted = get().mutedUserIds.includes(userId);
         get().setMuteForUser(userId, !currentlyMuted);
     },
+
+    // Notification helpers
+    pushNotification: (notif) => set((state) => ({ notifications: [notif, ...state.notifications].slice(0, 100), unreadNotifications: state.unreadNotifications + 1 })),
+    markNotificationRead: (id) => set((state) => {
+        // If id missing (ephemeral), mark first unread item
+        if (!id) {
+            const idx = state.notifications.findIndex(n => !n.read);
+            if (idx >= 0) {
+                const copy = [...state.notifications];
+                copy[idx] = { ...copy[idx], read: true };
+                return { notifications: copy, unreadNotifications: Math.max(0, state.unreadNotifications - 1) };
+            }
+            return {};
+        }
+        const wasUnread = state.notifications.find(n => n._id === id && !n.read);
+        return {
+            notifications: state.notifications.map(n => n._id === id ? { ...n, read: true } : n),
+            unreadNotifications: Math.max(0, state.unreadNotifications - (wasUnread ? 1 : 0))
+        };
+    }),
+    setNotifications: (items) => set({ notifications: items, unreadNotifications: items.filter(i => !i.read).length }),
 
     // Mark message as read
     markMessageAsRead: async (messageId) => {

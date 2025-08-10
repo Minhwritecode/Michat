@@ -57,6 +57,16 @@ const userSchema = new mongoose.Schema(
             type: String,
             default: ""
         },
+        // Last time user was seen online
+        lastSeen: {
+            type: Date,
+            default: Date.now
+        },
+        // Date of birth
+        dob: {
+            type: Date,
+            default: null
+        },
     },
     { timestamps: true }
 );

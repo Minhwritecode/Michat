@@ -26,6 +26,17 @@ const ChatHeader = ({ startCall }) => {
   const { onlineUsers } = useAuthStore();
   const [showInfo, setShowInfo] = useState(false);
   const [nickname, setNickname] = useState(selectedUser.nickname || "");
+  const formatLastSeen = (dateStr) => {
+    if (!dateStr) return "-";
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return "vừa xong";
+    if (mins < 60) return `${mins} phút trước`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} giờ trước`;
+    const days = Math.floor(hours / 24);
+    return `${days} ngày trước`;
+  };
 
   const userMessages = messages.filter(m =>
     m.senderId === selectedUser._id || m.receiverId === selectedUser._id
@@ -63,7 +74,7 @@ const ChatHeader = ({ startCall }) => {
             <div>
               <h3 className="font-medium">{selectedUser.fullName}</h3>
               <p className="text-sm text-base-content/70">
-                {onlineUsers.includes(selectedUser._id) ? "Online" : "Offline"}
+                {onlineUsers.includes(selectedUser._id) ? "Online" : `Offline • hoạt động ${formatLastSeen(selectedUser.lastSeen)}`}
               </p>
             </div>
           </div>

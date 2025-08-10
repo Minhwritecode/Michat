@@ -1,20 +1,24 @@
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../stores/useAuthStore";
-import { LogOut, MessageSquare, Settings, User, Users, Search, UserPlus, Check } from "lucide-react";
+import { LogOut, MessageSquare, Settings, User, Users, Search, UserPlus, Check, Bell, CheckCircle2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import CreateStoryModal from "./stories/CreateStoryModal";
 import toast from "react-hot-toast";
 import axiosInstance from "../libs/axios";
+import { useChatStore } from "../stores/useChatStore";
 
 const Navbar = () => {
     const { logout, authUser } = useAuthStore();
+    const { notifications, unreadNotifications, setNotifications, pushNotification, markNotificationRead } = useChatStore();
     const [showCreateStory, setShowCreateStory] = useState(false);
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
     const [showResults, setShowResults] = useState(false);
     const [profileModal, setProfileModal] = useState({ open: false, user: null });
     const searchRef = useRef(null);
+    const [showNotifs, setShowNotifs] = useState(false);
+    const notifRef = useRef(null);
 
     const searchUsers = async (q) => {
         setQuery(q);
@@ -39,6 +43,9 @@ const Navbar = () => {
             if (searchRef.current && !searchRef.current.contains(e.target)) {
                 setShowResults(false);
             }
+            if (notifRef.current && !notifRef.current.contains(e.target)) {
+                setShowNotifs(false);
+            }
         };
         const handleKey = (e) => { if (e.key === 'Escape') setShowResults(false); };
         document.addEventListener('mousedown', handleClick);
@@ -48,6 +55,24 @@ const Navbar = () => {
             document.removeEventListener('keydown', handleKey);
         };
     }, []);
+
+    // Load initial notifications and subscribe to realtime
+    useEffect(() => {
+        const fetchNotifs = async () => {
+            try {
+                const res = await axiosInstance.get('/api/notifications');
+                const items = res.data?.items || [];
+                setNotifications(items);
+            } catch {}
+        };
+        fetchNotifs();
+        const onNew = (e) => {
+            const notif = e.detail?.notif;
+            if (notif) pushNotification(notif);
+        };
+        window.addEventListener('notification-new', onNew);
+        return () => window.removeEventListener('notification-new', onNew);
+    }, [setNotifications, pushNotification]);
 
     const handleAddFriend = async (userId) => {
         try {
@@ -162,6 +187,68 @@ const Navbar = () => {
                                 >
                                     + Tạo Story
                                 </button>
+                                {/* Notifications */}
+                                <div className="relative" ref={notifRef}>
+                                    <button
+                                        className="btn btn-circle btn-sm btn-ghost relative"
+                                        onClick={() => setShowNotifs(v => !v)}
+                                        aria-label="Thông báo"
+                                    >
+                                        <Bell className="w-5 h-5" />
+                                        {unreadNotifications > 0 && (
+                                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                                                {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                                            </span>
+                                        )}
+                                    </button>
+                                    {showNotifs && (
+                                        <div className="absolute right-0 mt-2 w-80 max-w-[90vw] bg-base-100 border border-base-300 rounded-xl shadow-2xl overflow-hidden z-50">
+                                            <div className="p-3 border-b border-base-300 flex items-center justify-between">
+                                                <span className="font-semibold">Thông báo</span>
+                                                <button
+                                                    className="btn btn-ghost btn-xs"
+                                                    onClick={async () => {
+                                                        try {
+                                                            await axiosInstance.put('/api/notifications/read-all');
+                                                            setNotifications(notifications.map(n => ({ ...n, read: true })));
+                                                        } catch {}
+                                                    }}
+                                                >
+                                                    Đánh dấu đọc hết
+                                                </button>
+                                            </div>
+                                            <div className="max-h-96 overflow-y-auto divide-y divide-base-200">
+                                                {notifications.length === 0 && (
+                                                    <div className="p-4 text-sm text-base-content/60">Chưa có thông báo</div>
+                                                )}
+                                                {notifications.slice(0, 20).map((n) => (
+                                                    <button
+                                                        key={n._id || n.createdAt}
+                                                        className={`w-full text-left p-3 hover:bg-base-200 transition flex items-start gap-3 ${!n.read ? 'bg-primary/5' : ''}`}
+                                                        onClick={async () => {
+                                                            try {
+                                                                if (!n.read && n._id) await axiosInstance.put(`/api/notifications/${n._id}/read`);
+                                                                markNotificationRead(n._id);
+                                                            } catch {}
+                                                            if (n.link) window.location.href = n.link;
+                                                            setShowNotifs(false);
+                                                        }}
+                                                    >
+                                                        <div className="w-8 h-8 rounded-full bg-base-200 flex items-center justify-center flex-shrink-0">
+                                                            {n.icon ? <img src={n.icon} alt="icon" className="w-4 h-4" /> : <CheckCircle2 size={16} />}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="font-medium truncate">{n.title}</div>
+                                                            {n.body && <div className="text-xs text-base-content/70 truncate">{n.body}</div>}
+                                                            <div className="text-[10px] text-base-content/50 mt-1">{new Date(n.createdAt || Date.now()).toLocaleString()}</div>
+                                                        </div>
+                                                        {!n.read && <span className="w-2 h-2 rounded-full bg-primary mt-2" />}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                                 <Link
                                     to={"/groups"}
                                     className={`btn btn-sm gap-2 transition-colors`}>

@@ -98,7 +98,7 @@ const CreatePollModal = ({ isOpen, onClose, groupId, onPollCreated }) => {
         try {
             const validOptions = formData.options.filter(option => option.trim().length > 0);
             
-            const response = await axios.post("/polls/create", {
+            const response = await axios.post("/api/polls/create", {
                 groupId,
                 question: formData.question.trim(),
                 description: formData.description.trim(),

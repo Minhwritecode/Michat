@@ -3,6 +3,8 @@ import { generateToken } from "../libs/utils.js";
 import bcrypt from "bcryptjs";
 import cloudinary from "../libs/cloudinary.js";
 import Message from "../models/message.model.js";
+import Notification from "../models/notification.model.js";
+import { getIO } from "../libs/socket.js";
 
 export const signup = async (req, res) => {
     const { fullName, email, password } = req.body;
@@ -64,12 +66,15 @@ export const login = async (req, res) => {
         }
 
         generateToken(user._id, res);
+        try { await User.findByIdAndUpdate(user._id, { lastSeen: new Date() }); } catch {}
 
         res.status(200).json({
             _id: user._id,
             fullName: user.fullName,
             email: user.email,
             profilePic: user.profilePic,
+            lastSeen: user.lastSeen,
+            dob: user.dob
         });
     } catch (error) {
         console.log("Error in login controller", error.message);
@@ -89,7 +94,7 @@ export const logout = (req, res) => {
 
 export const updateProfile = async (req, res) => {
     try {
-        const { profilePic } = req.body;
+        const { profilePic, dob } = req.body;
         const userId = req.user._id;
 
         if (!profilePic) {
@@ -106,13 +111,23 @@ export const updateProfile = async (req, res) => {
             resource_type: 'image'
         });
 
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { profilePic: uploadResponse.secure_url },
-            { new: true }
-        );
+        const update = { profilePic: uploadResponse.secure_url };
+        if (dob) update.dob = new Date(dob);
+        const updatedUser = await User.findByIdAndUpdate(userId, update, { new: true });
 
         res.status(200).json(updatedUser);
+        // Broadcast profile update system-wide (public)
+        try {
+            const notif = await Notification.create({
+                userId: null,
+                type: 'system',
+                title: `${updatedUser.fullName} đã cập nhật hồ sơ`,
+                body: 'Hồ sơ vừa được cập nhật',
+                link: '/profile'
+            });
+            const io = getIO();
+            io.emit('notification:new', { ...notif.toObject(), _id: undefined }); // ephemeral for all; saved for admin if needed
+        } catch {}
     } catch (error) {
         console.log("error in update profile:", error);
         res.status(500).json({ message: "Failed to upload image. Please try again." });

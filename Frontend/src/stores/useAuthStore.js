@@ -175,6 +175,10 @@ export const useAuthStore = create((set, get) => ({
             window.dispatchEvent(new CustomEvent('typing-group', { detail: { groupId, from, isTyping } }));
         });
 
+        newSocket.on("notification:new", (notif) => {
+            try { window.dispatchEvent(new CustomEvent('notification-new', { detail: { notif } })); } catch {}
+        });
+
         set({ socket: newSocket });
     },
 

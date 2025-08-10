@@ -3,6 +3,7 @@ import Message from "../models/message.model.js";
 
 import cloudinary, { uploadToCloudinary } from "../libs/cloudinary.js";
 import { getReceiverSocketId, getIO } from "../libs/socket.js";
+import Notification from "../models/notification.model.js";
 
 export const getUsersForSidebar = async (req, res) => {
     try {
@@ -96,6 +97,17 @@ export const sendMessage = async (req, res) => {
                 userIds: [senderId.toString(), receiverId.toString()],
                 lastMessageAt: newMessage.createdAt
             });
+            // Push notification to receiver
+            try {
+                const notif = await Notification.create({
+                    userId: receiverId,
+                    type: 'message',
+                    title: 'Tin nhắn mới',
+                    body: newMessage.text || 'Bạn có tin nhắn mới',
+                    link: `/`
+                });
+                receiverSocketIds.forEach(socketId => io.to(socketId).emit('notification:new', notif));
+            } catch {}
         }
 
         res.status(201).json(newMessage);

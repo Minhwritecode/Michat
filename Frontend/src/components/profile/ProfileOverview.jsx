@@ -1,8 +1,10 @@
-import { Camera, Mail, User } from "lucide-react";
+import { Camera, Mail, User, Cake } from "lucide-react";
 import { useState } from "react";
+import axiosInstance from "../../libs/axios";
 
 const ProfileOverview = ({ user, onUpdateAvatar }) => {
     const [uploading, setUploading] = useState(false);
+    const [dob, setDob] = useState(user?.dob ? new Date(user.dob).toISOString().slice(0,10) : "");
 
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
@@ -17,6 +19,12 @@ const ProfileOverview = ({ user, onUpdateAvatar }) => {
                 setUploading(false);
             }
         };
+    };
+
+    const handleDobSave = async () => {
+        try {
+            await axiosInstance.put("/api/auth/update-profile", { dob });
+        } catch {}
     };
 
     return (
@@ -39,6 +47,10 @@ const ProfileOverview = ({ user, onUpdateAvatar }) => {
                     </div>
                     <div className="flex items-center gap-2 text-base-content/70">
                         <Mail size={16} /> {user.email}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Cake size={16} />
+                        <input type="date" className="input input-sm input-bordered" value={dob} onChange={(e)=>setDob(e.target.value)} onBlur={handleDobSave} />
                     </div>
                     {uploading && <div className="text-xs text-base-content/60">Đang cập nhật ảnh...</div>}
                 </div>

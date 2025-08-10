@@ -102,7 +102,7 @@ const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
 
     const modalContent = (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-lg backdrop-saturate-150 z-[100]">
-            <div className="bg-base-100/95 text-base-content antialiased w-full h-full overflow-hidden flex flex-col animate-modal-scale">
+            <div className="bg-base-100/95 text-base-content antialiased w-full h-full overflow-hidden flex flex-col animate-modal-scale max-w-4xl mx-auto my-8 rounded-2xl shadow-2xl border border-base-300">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-base-200 sticky top-0 bg-base-100/95 z-10">
                     <div className="flex items-center gap-3">
@@ -133,7 +133,7 @@ const CreateStoryModal = ({ isOpen, onClose, onCreated }) => {
                             </label>
                             <textarea
                                 id="story-text"
-                                className="textarea textarea-bordered w-full min-h-[120px] resize-none focus:border-primary transition-colors"
+                                className="textarea textarea-bordered w-full min-h-[140px] resize-none focus:border-primary transition-colors leading-6"
                                 placeholder="Bạn đang nghĩ gì? Chia sẻ khoảnh khắc đặc biệt..."
                                 value={text}
                                 onChange={(e) => setText(e.target.value)}

@@ -331,6 +331,16 @@ const ChatContainer = () => {
         }
     };
 
+    // Birthday banner (ephemeral)
+    const isBirthday = (() => {
+        try {
+            const dob = selectedUser?.dob ? new Date(selectedUser.dob) : null;
+            if (!dob) return false;
+            const now = new Date();
+            return dob.getDate() === now.getDate() && dob.getMonth() === now.getMonth();
+        } catch { return false; }
+    })();
+
     if (isMessagesLoading) {
         return (
             <div className="flex flex-col h-full">
@@ -359,6 +369,18 @@ const ChatContainer = () => {
             <div className="flex-shrink-0">
                 <ChatHeader startCall={startCall} />
             </div>
+
+            {isBirthday && (
+                <div className="mx-4 mt-3 rounded-xl border border-base-300 bg-base-100 overflow-hidden shadow">
+                    <div className="flex items-center gap-3 p-3">
+                        <img src="https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif" alt="happy birthday" className="w-12 h-12 rounded object-cover" />
+                        <div className="flex-1 min-w-0">
+                            <div className="font-semibold">Chúc mừng sinh nhật {selectedUser.fullName}! 🎉</div>
+                            <div className="text-sm text-base-content/70">Gửi lời chúc đến họ nào!</div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Reply/Edit Preview - Fixed */}
             {(replyToMessage || editingMessage) && (

@@ -2,6 +2,8 @@ import Story from "../models/story.model.js";
 import User from "../models/user.model.js";
 import StoryForward from "../models/storyForward.model.js";
 import { uploadToCloudinary } from "../libs/cloudinary.js";
+import Notification from "../models/notification.model.js";
+import { getReceiverSocketId, getIO } from "../libs/socket.js";
 
 // Tạo story mới
 export const createStory = async (req, res) => {
@@ -32,6 +34,19 @@ export const createStory = async (req, res) => {
         // Populate user info
         const populatedStory = await Story.findById(story._id)
             .populate('userId', 'fullName profilePic');
+
+        // Notification: story created (public broadcast to all except the creator will also receive)
+        try {
+            const io = getIO();
+            const payload = {
+                type: 'story_created',
+                title: `${populatedStory.userId.fullName} đăng story mới`,
+                body: text?.slice(0, 60) || 'Story mới được đăng',
+                link: '/'
+            };
+            io.emit('notification:new', payload);
+            // Optionally persist for users on fetch; skipping massive writes
+        } catch {}
 
         res.status(201).json(populatedStory);
     } catch (error) {
