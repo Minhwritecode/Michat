@@ -9,16 +9,32 @@ export const useChatStore = create((set, get) => ({
     selectedUser: null,
     isUsersLoading: false,
     isMessagesLoading: false,
+    // id user vừa được đẩy lên top do tin nhắn mới (để highlight UI)
+    lastBubbledUserId: null,
+    // Lưu danh sách user đã tắt thông báo (persist localStorage)
+    mutedUserIds: (() => {
+        try {
+            const raw = localStorage.getItem("michat-muted-users");
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    })(),
 
     getUsers: async () => {
         set({ isUsersLoading: true });
         try {
             const res = await axiosInstance.get("/api/auth/users-with-unread");
             // Ensure label field exists (fallback relation->friend)
-            const users = (res.data || []).map(u => ({
-                ...u,
-                label: u.label || (u.relation === 'friend' ? 'friend' : u.label)
-            }));
+            const users = (res.data || [])
+                .map(u => ({
+                    ...u,
+                    label: u.label || (u.relation === 'friend' ? 'friend' : u.label),
+                    lastMessageAt: u.lastMessageAt ? new Date(u.lastMessageAt).getTime() : 0
+                }))
+                // sort by lastMessageAt desc if available
+                .sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
             set({ users });
         } catch (error) {
             toast.error(error.response.data.message);
@@ -104,16 +120,36 @@ export const useChatStore = create((set, get) => ({
         const socket = useAuthStore.getState().socket;
         if (!socket) return;
 
+        // Đảm bảo không bị đăng ký trùng listener
+        socket.off("newMessage");
+        socket.off("messageReaction");
+        socket.off("inboxActivity");
+        socket.off("messageEdited");
+
         socket.on("newMessage", (newMessage) => {
             set({ messages: [...get().messages, newMessage] });
             // Reorder users in sidebar when a message arrives
-            set(state => ({
-                users: state.users
-                    .map(u => (u._id === (newMessage.senderId?._id || newMessage.senderId) || u._id === (newMessage.receiverId?._id || newMessage.receiverId))
-                        ? { ...u, lastMessageAt: new Date(newMessage.createdAt).getTime() }
-                        : u)
-                    .sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0))
-            }));
+            // Nếu user bị mute thì KHÔNG đẩy lên top
+            set((state) => {
+                const authUser = useAuthStore.getState().authUser;
+                const myId = authUser?._id;
+                const mutedSet = new Set(get().mutedUserIds);
+                const senderId = newMessage.senderId?._id || newMessage.senderId;
+                const receiverId = newMessage.receiverId?._id || newMessage.receiverId;
+                const partnerId = senderId === myId ? receiverId : senderId;
+                const createdAtMs = new Date(newMessage.createdAt).getTime();
+
+                const updatedUsers = state.users
+                    .map((u) => {
+                        const isTarget = u._id === partnerId;
+                        if (!isTarget) return u;
+                        if (mutedSet.has(u._id)) return u; // giữ nguyên thứ tự nếu đang mute
+                        return { ...u, lastMessageAt: createdAtMs };
+                    })
+                    .sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
+
+                return { users: updatedUsers, lastBubbledUserId: mutedSet.has(partnerId) ? state.lastBubbledUserId : partnerId };
+            });
         });
 
         socket.on("messageReaction", ({ messageId, reactions }) => {
@@ -126,11 +162,20 @@ export const useChatStore = create((set, get) => ({
         socket.on("inboxActivity", ({ userIds, lastMessageAt }) => {
             set(state => ({
                 users: state.users
-                    .map(u => (userIds.includes(u._id.toString())
-                        ? { ...u, lastMessageAt: new Date(lastMessageAt).getTime() }
-                        : u))
+                    .map(u => {
+                        const mutedSet = new Set(get().mutedUserIds);
+                        if (!userIds.includes(u._id.toString())) return u;
+                        if (mutedSet.has(u._id)) return u;
+                        return { ...u, lastMessageAt: new Date(lastMessageAt).getTime() };
+                    })
                     .sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0))
             }));
+            // Highlight the first matching user id (prioritize the one that's not me)
+            const authUser = useAuthStore.getState().authUser;
+            const myId = authUser?._id?.toString();
+            const partner = userIds.find(id => id !== myId);
+            const mutedSet = new Set(get().mutedUserIds);
+            if (partner && !mutedSet.has(partner)) set({ lastBubbledUserId: partner });
         });
 
         socket.on("messageEdited", ({ messageId, text, editedAt }) => {
@@ -147,9 +192,32 @@ export const useChatStore = create((set, get) => ({
         socket.off("newMessage");
         socket.off("messageReaction");
         socket.off("messageEdited");
+        socket.off("inboxActivity");
     },
 
     setSelectedUser: (selectedUser) => set({ selectedUser }),
+
+    clearLastBubbledUser: () => set({ lastBubbledUserId: null }),
+
+    // Mute helpers
+    isUserMuted: (userId) => {
+        return get().mutedUserIds.includes(userId);
+    },
+    setMuteForUser: (userId, shouldMute) => {
+        if (!userId) return;
+        set((state) => {
+            const setNext = new Set(state.mutedUserIds);
+            if (shouldMute) setNext.add(userId); else setNext.delete(userId);
+            const nextArr = Array.from(setNext);
+            try { localStorage.setItem("michat-muted-users", JSON.stringify(nextArr)); } catch {}
+            return { mutedUserIds: nextArr };
+        });
+    },
+    toggleMuteForUser: (userId) => {
+        if (!userId) return;
+        const currentlyMuted = get().mutedUserIds.includes(userId);
+        get().setMuteForUser(userId, !currentlyMuted);
+    },
 
     // Mark message as read
     markMessageAsRead: async (messageId) => {

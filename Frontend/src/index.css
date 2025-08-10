@@ -334,6 +334,27 @@
   }
 }
 
+/* Messenger-like typing dots: gentle vertical wave */
+@keyframes typing-wave {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
+  30% { transform: translateY(-3px); opacity: 1; }
+}
+
+.typing-dots {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.typing-dots .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: rgb(99, 102, 241);
+  animation: typing-wave 1.2s ease-in-out infinite;
+}
+.typing-dots .dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dots .dot:nth-child(3) { animation-delay: 0.3s; }
+
 @keyframes circle-pop {
   0% {
     opacity: 0;

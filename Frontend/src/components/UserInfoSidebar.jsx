@@ -105,6 +105,9 @@ export default function UserInfoSidebar({
   const [highlight, setHighlight] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  // Collapsible sections
+  const [showSettings, setShowSettings] = useState(false);
+  const [showChatInfo, setShowChatInfo] = useState(false);
 
   const effectiveLoading = typeof externalLoading === "boolean" ? externalLoading : loading;
   const effectiveHighlight = typeof externalHighlight === "boolean" ? externalHighlight : highlight;
@@ -166,9 +169,7 @@ export default function UserInfoSidebar({
       if (selectedUser?._id === user._id) {
         setSelectedUser({ ...selectedUser, label: labelKey, relation: 'friend' });
       }
-      // Refresh Sidebar list để filter hoạt động
-      await getUsers();
-      // Thông báo toàn app (Sidebar, FriendsList) để tự refresh
+      // Thông báo toàn app (Sidebar, FriendsList) để tự refresh mục tiêu duy nhất
       window.dispatchEvent(new CustomEvent('label-updated', { detail: { userId: user._id, label: labelKey } }));
     } catch {
       toast.error("Cập nhật thất bại");
@@ -299,130 +300,150 @@ export default function UserInfoSidebar({
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="p-4 border-b border-base-200 bg-base-50">
-          <h4 className="text-sm font-semibold mb-3 text-base-content/70">Hành động nhanh</h4>
-          <div className="grid grid-cols-3 gap-2">
-            {ACTIONS.map(action => (
-              <button
-                key={action.key}
-                onClick={() => handleAction(action.key)}
-                className={`p-3 rounded-xl flex flex-col items-center gap-1 transition-all duration-200 ${action.bgColor}`}
-              >
-                <div className={action.color}>{action.icon}</div>
-                <span className="text-xs font-medium">{action.label}</span>
-              </button>
-            ))}
+        {/* Body scrollable */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Quick Actions */}
+          <div className="p-4 border-b border-base-200 bg-base-50">
+            <h4 className="text-sm font-semibold mb-3 text-base-content/70">Hành động nhanh</h4>
+            <div className="grid grid-cols-3 gap-2">
+              {ACTIONS.map(action => (
+                <button
+                  key={action.key}
+                  onClick={() => handleAction(action.key)}
+                  className={`p-3 rounded-xl flex flex-col items-center gap-1 transition-all duration-200 ${action.bgColor}`}
+                >
+                  <div className={action.color}>{action.icon}</div>
+                  <span className="text-xs font-medium">{action.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Settings */}
-        <div className="p-4 border-b border-base-200 bg-base-50">
-          <h4 className="text-sm font-semibold mb-3 text-base-content/70">Cài đặt</h4>
-          <div className="space-y-2">
-            {SETTINGS.map(setting => (
-              <button
-                key={setting.key}
-                onClick={() => handleSetting(setting.key)}
-                className={`w-full p-3 rounded-xl flex items-center gap-3 transition-all duration-200 ${setting.bgColor}`}
-              >
-                <div className={setting.color}>
-                  {setting.key === "mute" && isMuted ? setting.activeIcon : setting.icon}
-                </div>
-                <span className="text-sm font-medium flex-1 text-left">
-                  {setting.key === "mute" && isMuted ? "Bật thông báo" : setting.label}
-                </span>
-                {setting.key === "mute" && isMuted && (
-                  <VolumeX size={16} className="text-orange-600" />
-                )}
-              </button>
-            ))}
-          </div>
-          {/* Relationship label (visible only when friend) */}
-          {(user.relation === 'friend' || selectedUser?.relation === 'friend') && (
-            <div className="mt-4">
-              <div className="text-sm font-semibold mb-2 text-base-content/70">Nhóm quan hệ</div>
-              <div className="flex flex-wrap gap-2">
-                {LABEL_OPTIONS.map(opt => (
-                  <button key={opt.key} className={`btn btn-xs ${(user.label || selectedUser?.label) === opt.key ? 'btn-primary' : 'btn-outline'}`} onClick={() => handleUpdateLabel(opt.key)}>
-                    {opt.label}
+          {/* Settings - collapsible */}
+          <div className="border-b border-base-200">
+            <button
+              className="w-full p-4 flex items-center justify-between bg-base-50 hover:bg-base-100 transition-colors"
+              onClick={() => setShowSettings((s) => !s)}
+            >
+              <span className="text-sm font-semibold text-base-content/70">Cài đặt</span>
+              <span className={`transition-transform ${showSettings ? 'rotate-180' : ''}`}>▾</span>
+            </button>
+            {showSettings && (
+              <div className="p-4 pt-0 space-y-2">
+                {SETTINGS.map(setting => (
+                  <button
+                    key={setting.key}
+                    onClick={() => handleSetting(setting.key)}
+                    className={`w-full p-3 rounded-xl flex items-center gap-3 transition-all duration-200 ${setting.bgColor}`}
+                  >
+                    <div className={setting.color}>
+                      {setting.key === "mute" && isMuted ? setting.activeIcon : setting.icon}
+                    </div>
+                    <span className="text-sm font-medium flex-1 text-left">
+                      {setting.key === "mute" && isMuted ? "Bật thông báo" : setting.label}
+                    </span>
+                    {setting.key === "mute" && isMuted && (
+                      <VolumeX size={16} className="text-orange-600" />
+                    )}
                   </button>
                 ))}
+
+                {(user.relation === 'friend' || selectedUser?.relation === 'friend') && (
+                  <div className="mt-2">
+                    <div className="text-sm font-semibold mb-2 text-base-content/70">Nhóm quan hệ</div>
+                    <div className="flex flex-wrap gap-2">
+                      {LABEL_OPTIONS.map(opt => (
+                        <button key={opt.key} className={`btn btn-xs ${(user.label || selectedUser?.label) === opt.key ? 'btn-primary' : 'btn-outline'}`} onClick={() => handleUpdateLabel(opt.key)}>
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-base-200 bg-base-100/90">
-          {TABS.map(t => (
+          {/* Tabs */}
+          <div className="flex border-b border-base-200 bg-base-100/90 sticky top-0 z-10">
+            {TABS.map(t => (
+              <button
+                key={t.key}
+                className={`flex-1 py-2 text-sm font-medium flex items-center justify-center gap-1 transition-colors duration-200 ${tab === t.key ? "border-b-2 border-primary text-primary bg-base-200" : "text-base-content/70 hover:bg-base-200"}`}
+                onClick={() => setTab(t.key)}
+              >
+                {t.icon}
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab content */}
+          <div className="p-4 bg-base-100">
+            {tab === "images" && (
+              <div className="grid grid-cols-3 gap-2">
+                {images.length === 0 && <div className="col-span-3 text-center text-base-content/50 py-8">Chưa có ảnh</div>}
+                {images.map((img, idx) => (
+                  <img key={idx} src={img.url} alt="img" className="w-full h-24 object-cover rounded shadow hover:scale-105 transition-transform duration-200 cursor-pointer" />
+                ))}
+              </div>
+            )}
+            {tab === "videos" && (
+              <div className="space-y-2">
+                {videos.length === 0 && <div className="text-center text-base-content/50 py-8">Chưa có video</div>}
+                {videos.map((vid, idx) => (
+                  <video key={idx} src={vid.url} controls className="w-full rounded shadow" />
+                ))}
+              </div>
+            )}
+            {tab === "files" && (
+              <div className="space-y-2">
+                {files.length === 0 && <div className="text-center text-base-content/50 py-8">Chưa có file</div>}
+                {files.map((file, idx) => (
+                  <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer" className="block p-2 bg-base-200 rounded hover:bg-base-300 transition-colors">
+                    <FileText size={16} className="inline mr-2" />
+                    {file.filename}
+                  </a>
+                ))}
+              </div>
+            )}
+            {tab === "links" && (
+              <div className="space-y-2">
+                {links.length === 0 && <div className="text-center text-base-content/50 py-8">Chưa có link</div>}
+                {links.map((link, idx) => (
+                  <a key={idx} href={link} target="_blank" rel="noopener noreferrer" className="block text-primary hover:underline transition-colors">
+                    {link}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Chat info - collapsible */}
+          <div className="border-t border-base-200">
             <button
-              key={t.key}
-              className={`flex-1 py-2 text-sm font-medium flex items-center justify-center gap-1 transition-colors duration-200 ${tab === t.key ? "border-b-2 border-primary text-primary bg-base-200" : "text-base-content/70 hover:bg-base-200"}`}
-              onClick={() => setTab(t.key)}
+              className="w-full p-4 flex items-center justify-between bg-base-100 hover:bg-base-200 transition-colors"
+              onClick={() => setShowChatInfo((s) => !s)}
             >
-              {t.icon}
-              {t.label}
+              <span className="text-sm font-semibold text-base-content/70">Thông tin cuộc trò chuyện</span>
+              <span className={`transition-transform ${showChatInfo ? 'rotate-180' : ''}`}>▾</span>
             </button>
-          ))}
-        </div>
-
-        {/* Tab content */}
-        <div className="flex-1 overflow-y-auto p-4 bg-base-100">
-          {tab === "images" && (
-            <div className="grid grid-cols-3 gap-2">
-              {images.length === 0 && <div className="col-span-3 text-center text-base-content/50 py-8">Chưa có ảnh</div>}
-              {images.map((img, idx) => (
-                <img key={idx} src={img.url} alt="img" className="w-full h-24 object-cover rounded shadow hover:scale-105 transition-transform duration-200 cursor-pointer" />
-              ))}
-            </div>
-          )}
-          {tab === "videos" && (
-            <div className="space-y-2">
-              {videos.length === 0 && <div className="text-center text-base-content/50 py-8">Chưa có video</div>}
-              {videos.map((vid, idx) => (
-                <video key={idx} src={vid.url} controls className="w-full rounded shadow" />
-              ))}
-            </div>
-          )}
-          {tab === "files" && (
-            <div className="space-y-2">
-              {files.length === 0 && <div className="text-center text-base-content/50 py-8">Chưa có file</div>}
-              {files.map((file, idx) => (
-                <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer" className="block p-2 bg-base-200 rounded hover:bg-base-300 transition-colors">
-                  <FileText size={16} className="inline mr-2" />
-                  {file.filename}
-                </a>
-              ))}
-            </div>
-          )}
-          {tab === "links" && (
-            <div className="space-y-2">
-              {links.length === 0 && <div className="text-center text-base-content/50 py-8">Chưa có link</div>}
-              {links.map((link, idx) => (
-                <a key={idx} href={link} target="_blank" rel="noopener noreferrer" className="block text-primary hover:underline transition-colors">
-                  {link}
-                </a>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Thông tin cuộc trò chuyện */}
-        <div className="p-4 border-t border-base-200 text-sm text-base-content/70 bg-base-100/90">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Calendar size={14} />
-              <span>Ngày bắt đầu: <b>{chatInfo?.startedAt ? new Date(chatInfo.startedAt).toLocaleDateString() : "-"}</b></span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MessageSquare size={14} />
-              <span>Tổng số tin nhắn: <b>{chatInfo?.totalMessages ?? "-"}</b></span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock size={14} />
-              <span>Hoạt động lần cuối: <b>{user.lastSeen ? new Date(user.lastSeen).toLocaleString() : "-"}</b></span>
-            </div>
+            {showChatInfo && (
+              <div className="p-4 text-sm text-base-content/70 bg-base-100/90 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Calendar size={14} />
+                  <span>Ngày bắt đầu: <b>{chatInfo?.startedAt ? new Date(chatInfo.startedAt).toLocaleDateString() : "-"}</b></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MessageSquare size={14} />
+                  <span>Tổng số tin nhắn: <b>{chatInfo?.totalMessages ?? "-"}</b></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock size={14} />
+                  <span>Hoạt động lần cuối: <b>{user.lastSeen ? new Date(user.lastSeen).toLocaleString() : "-"}</b></span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -20,7 +20,7 @@ const STATUS = [
 ];
 
 const Sidebar = () => {
-    const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading } = useChatStore();
+    const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading, subscribeToMessages, unsubscribeFromMessages, lastBubbledUserId, clearLastBubbledUser } = useChatStore();
     const { onlineUsers } = useAuthStore();
     const { hasDraft, getDraftPreview } = useDraftStore();
     const [showOnlineOnly, setShowOnlineOnly] = useState(false);
@@ -29,10 +29,47 @@ const Sidebar = () => {
 
     useEffect(() => {
         getUsers();
-        const onLabel = () => getUsers();
+        subscribeToMessages();
+        const onLabel = (e) => {
+            // Cập nhật label cho user mục tiêu ngay trong bộ nhớ để tránh refetch nặng
+            const { userId, label } = e.detail || {};
+            if (!userId) return;
+            useChatStore.setState((state) => ({
+                users: state.users.map(u => u._id === userId ? { ...u, label } : u)
+            }));
+        };
+        const onSocketConnected = () => getUsers();
         window.addEventListener('label-updated', onLabel);
-        return () => window.removeEventListener('label-updated', onLabel);
-    }, [getUsers]);
+        window.addEventListener('socket-connected', onSocketConnected);
+
+        // Live typing badge in Sidebar for direct chats
+        const onTypingDirect = (e) => {
+            const { from, isTyping } = e.detail || {};
+            if (!from) return;
+            const el = document.getElementById(`typing-badge-${from}`);
+            if (!el) return;
+            if (isTyping) {
+                el.classList.remove('hidden');
+                el.classList.add('flex');
+                // auto-hide after 1.6s if no further typing
+                clearTimeout(el._typingTimeout);
+                el._typingTimeout = setTimeout(() => {
+                    el.classList.add('hidden');
+                    el.classList.remove('flex');
+                }, 1600);
+            } else {
+                el.classList.add('hidden');
+                el.classList.remove('flex');
+            }
+        };
+        window.addEventListener('typing-direct', onTypingDirect);
+        return () => {
+            window.removeEventListener('label-updated', onLabel);
+            window.removeEventListener('socket-connected', onSocketConnected);
+            window.removeEventListener('typing-direct', onTypingDirect);
+            unsubscribeFromMessages();
+        };
+    }, [getUsers, subscribeToMessages, unsubscribeFromMessages]);
 
     // Filter users với unreadCount thực tế
     const filteredUsers = users.filter(user => {
@@ -104,7 +141,11 @@ const Sidebar = () => {
                                 w-full p-3 flex items-center gap-3
                                 hover:bg-base-300 transition-colors
                                 ${selectedUser?._id === user._id ? "bg-base-300 ring-1 ring-base-300" : ""}
+                                ${lastBubbledUserId === user._id ? 'animate-[pulse_1.1s_ease-in-out_2] ring-2 ring-primary/50 bg-primary/5 shadow-[0_0_0_3px_rgba(99,102,241,0.15)]' : ''}
                             `}
+                            onAnimationEnd={() => {
+                                if (lastBubbledUserId === user._id) clearLastBubbledUser();
+                            }}
                         >
                             <div className="relative mx-auto lg:mx-0">
                                 <img
@@ -128,10 +169,16 @@ const Sidebar = () => {
                             </div>
                             <div className="hidden lg:block text-left min-w-0 flex-1">
                                 <div className="font-medium truncate">{user.fullName}</div>
-                                <div className="text-sm text-zinc-400">
-                                    {user.label ? LABELS.find(l => l.key === user.label)?.label : ""}
-                                    {user.label && " • "}
-                                    {onlineUsers.includes(user._id) ? "Online" : "Offline"}
+                                <div className="text-sm text-zinc-400 flex items-center gap-2">
+                                    <span>
+                                        {user.label ? LABELS.find(l => l.key === user.label)?.label : ""}
+                                        {user.label && " • "}
+                                        {onlineUsers.includes(user._id) ? "Online" : "Offline"}
+                                    </span>
+                                    {/* Typing badge (shows when user is typing to me anywhere) */}
+                                    <span id={`typing-badge-${user._id}`} className="hidden items-center gap-1 text-primary">
+                                        <span className="typing-dots"><span className="dot" /><span className="dot" /><span className="dot" /></span>
+                                    </span>
                                 </div>
                                 {hasUserDraft && draftPreview && (
                                     <div className="text-xs text-blue-500 truncate mt-1 italic">

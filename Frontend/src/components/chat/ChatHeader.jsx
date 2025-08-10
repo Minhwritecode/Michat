@@ -22,7 +22,7 @@ const styles = `
 `;
 
 const ChatHeader = ({ startCall }) => {
-  const { selectedUser, setSelectedUser, messages } = useChatStore();
+  const { selectedUser, setSelectedUser, messages, isUserMuted, setMuteForUser } = useChatStore();
   const { onlineUsers } = useAuthStore();
   const [showInfo, setShowInfo] = useState(false);
   const [nickname, setNickname] = useState(selectedUser.nickname || "");
@@ -109,6 +109,10 @@ const ChatHeader = ({ startCall }) => {
         onUpdateNickname={handleUpdateNickname}
         chatInfo={chatInfo}
         nickname={nickname}
+        isMuted={isUserMuted(selectedUser._id)}
+        onMuteNotifications={async (next) => {
+          setMuteForUser(selectedUser._id, next);
+        }}
       />
     </>
   );

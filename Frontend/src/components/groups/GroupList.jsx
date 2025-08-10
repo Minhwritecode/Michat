@@ -17,12 +17,54 @@ const GroupList = () => {
     } = useGroupStore();
 
     const [searchTerm, setSearchTerm] = useState("");
+    // { [groupId]: { [userId]: lastTsMs } }
+    const [typingMap, setTypingMap] = useState({});
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [filter, setFilter] = useState("all"); // all, admin, member
 
     useEffect(() => {
         fetchGroups(1, 10, searchTerm);
     }, [searchTerm]);
+
+    // Subscribe to group typing events and prune old entries
+    useEffect(() => {
+        const onTypingGroup = (e) => {
+            const { groupId, from, isTyping } = e.detail || {};
+            if (!groupId || !from) return;
+            setTypingMap((prev) => {
+                const next = { ...prev };
+                if (isTyping) {
+                    next[groupId] = { ...(next[groupId] || {}), [from]: Date.now() };
+                } else {
+                    if (next[groupId]) {
+                        const { [from]: _, ...rest } = next[groupId];
+                        next[groupId] = rest;
+                        if (Object.keys(next[groupId]).length === 0) delete next[groupId];
+                    }
+                }
+                return next;
+            });
+        };
+        const prune = () => {
+            const now = Date.now();
+            setTypingMap((prev) => {
+                const next = {};
+                for (const [gid, users] of Object.entries(prev)) {
+                    const filtered = Object.fromEntries(
+                        Object.entries(users).filter(([, ts]) => now - ts < 3000)
+                    );
+                    if (Object.keys(filtered).length > 0) next[gid] = filtered;
+                }
+                return next;
+            });
+        };
+        const intervalId = setInterval(prune, 1000);
+        window.addEventListener('typing-group', onTypingGroup);
+        return () => {
+            clearInterval(intervalId);
+            window.removeEventListener('typing-group', onTypingGroup);
+        };
+    }, []);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -154,14 +196,29 @@ const GroupList = () => {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredGroups.map((group) => (
-                        <GroupCard
-                            key={group._id}
-                            group={group}
-                            onClick={() => handleGroupClick(group)}
-                            onOptionsClick={handleOptionsClick}
-                        />
-                    ))}
+                    {filteredGroups.map((group) => {
+                        const groupTyping = typingMap[group._id] || {};
+                        // Map typing userIds to member info (max 3)
+                        const typingUserIds = Object.keys(groupTyping).slice(0, 3);
+                        const memberMap = new Map((group.members || []).map(m => [m.user._id, m.user]));
+                        const typingUsers = typingUserIds.map(uid => {
+                            const u = memberMap.get(uid);
+                            return {
+                                _id: uid,
+                                fullName: u?.fullName || 'Đang nhập...',
+                                profilePic: u?.profilePic || '/avatar.png'
+                            };
+                        });
+                        return (
+                            <GroupCard
+                                key={group._id}
+                                group={group}
+                                typingUsers={typingUsers}
+                                onClick={() => handleGroupClick(group)}
+                                onOptionsClick={handleOptionsClick}
+                            />
+                        );
+                    })}
                 </div>
             )}
 

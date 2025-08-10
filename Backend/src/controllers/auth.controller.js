@@ -264,16 +264,24 @@ export const unfriend = async (req, res) => {
 
 export const updateUserLabel = async (req, res) => {
     try {
-        const { userId } = req.params;
+        const { userId } = req.params; // target user
         const { label } = req.body;
-        // Chỉ cho phép gán label cho người khác
-        if (userId === req.user._id.toString()) return res.status(400).json({ message: "Không thể gán label cho chính mình" });
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ message: "User not found" });
-        user.label = label;
-        await user.save();
-        res.json({ message: "Đã cập nhật label" });
+        const loggedInUserId = req.user._id.toString();
+        if (userId === loggedInUserId) return res.status(400).json({ message: "Không thể gán label cho chính mình" });
+
+        // Ensure target exists
+        const target = await User.findById(userId).select("_id");
+        if (!target) return res.status(404).json({ message: "User not found" });
+
+        // Save per-friend label on the logged-in user document
+        const me = await User.findById(loggedInUserId);
+        if (!me.relationLabels) me.relationLabels = new Map();
+        me.relationLabels.set(userId, label);
+        await me.save();
+
+        res.json({ message: "Đã cập nhật nhóm quan hệ", userId, label });
     } catch (error) {
+        console.error("updateUserLabel error", error);
         res.status(500).json({ message: "Lỗi cập nhật label" });
     }
 };
@@ -292,10 +300,11 @@ export const getUsersForSidebar = async (req, res) => {
         const loggedInUserId = req.user._id;
         const loggedInUser = await User.findById(loggedInUserId);
         const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
+        const relationLabels = loggedInUser.relationLabels || new Map();
         const usersWithLabel = filteredUsers.map(u => ({
             ...u.toObject(),
             relation: getUserLabel(loggedInUser, u),
-            label: u.label || null
+            label: relationLabels.get(u._id.toString()) || null
         }));
         res.status(200).json(usersWithLabel);
     } catch (error) {
@@ -312,7 +321,8 @@ export const getUserProfile = async (req, res) => {
         if (!user) return res.status(404).json({ message: "User not found" });
         const loggedInUser = await User.findById(req.user._id);
         const relation = getUserLabel(loggedInUser, user);
-        res.json({ ...user.toObject(), relation, label: user.label || null });
+        const relationLabels = loggedInUser.relationLabels || new Map();
+        res.json({ ...user.toObject(), relation, label: relationLabels.get(userId) || null });
     } catch (error) {
         res.status(500).json({ message: "Lỗi lấy profile" });
     }
@@ -354,11 +364,20 @@ export const getUsersWithUnreadCount = async (req, res) => {
                 readBy: { $ne: loggedInUserId }
             });
 
+            // Lấy thời điểm tin nhắn cuối cùng giữa 2 người để client có thể sắp xếp
+            const lastMsg = await Message.findOne({
+                $or: [
+                    { senderId: user._id, receiverId: loggedInUserId },
+                    { senderId: loggedInUserId, receiverId: user._id },
+                ]
+            }).sort({ createdAt: -1 }).select('createdAt');
+
             return {
                 ...user.toObject(),
                 relation: getUserLabel(loggedInUser, user),
-                label: user.label || null,
-                unreadCount
+                label: (loggedInUser.relationLabels || new Map()).get(user._id.toString()) || null,
+                unreadCount,
+                lastMessageAt: lastMsg?.createdAt || null
             };
         }));
 

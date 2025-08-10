@@ -75,6 +75,19 @@ export function initSocket(app) {
             }
             io.emit("getOnlineUsers", Object.keys(userSocketMap));
         });
+
+        // Typing indicators - direct
+        socket.on("typing:direct", ({ to, from, isTyping }) => {
+            const targets = getReceiverSocketId(to);
+            targets.forEach((sid) => {
+                io.to(sid).emit("typing:direct", { from, isTyping });
+            });
+        });
+
+        // Typing indicators - group (lightweight broadcast; clients will filter by groupId)
+        socket.on("typing:group", ({ groupId, from, isTyping }) => {
+            io.emit("typing:group", { groupId, from, isTyping });
+        });
     });
 
     return { io, server };

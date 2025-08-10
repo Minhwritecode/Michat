@@ -151,6 +151,7 @@ export const useAuthStore = create((set, get) => ({
         newSocket.on("connect", () => {
             console.log("Socket connected");
             set({ socketConnected: true });
+            try { window.dispatchEvent(new Event('socket-connected')); } catch {}
         });
 
         newSocket.on("disconnect", () => {
@@ -164,6 +165,14 @@ export const useAuthStore = create((set, get) => ({
 
         newSocket.on("getOnlineUsers", (userIds) => {
             set({ onlineUsers: userIds });
+        });
+
+        // Typing events - keep minimal state here; chat components can subscribe
+        newSocket.on("typing:direct", ({ from, isTyping }) => {
+            window.dispatchEvent(new CustomEvent('typing-direct', { detail: { from, isTyping } }));
+        });
+        newSocket.on("typing:group", ({ groupId, from, isTyping }) => {
+            window.dispatchEvent(new CustomEvent('typing-group', { detail: { groupId, from, isTyping } }));
         });
 
         set({ socket: newSocket });

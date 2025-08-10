@@ -3,7 +3,7 @@ import { Users, MessageSquare, Lock, Globe, Crown, MoreVertical } from "lucide-r
 import useGroupStore from "../../stores/useGroupStore";
 import { useAuthStore } from "../../stores/useAuthStore";
 
-const GroupCard = ({ group, onClick, onOptionsClick }) => {
+const GroupCard = ({ group, typingUsers = [], onClick, onOptionsClick }) => {
     const { authUser } = useAuthStore();
     const { isGroupAdmin, isGroupOwner } = useGroupStore();
 
@@ -109,6 +109,22 @@ const GroupCard = ({ group, onClick, onOptionsClick }) => {
                     {formatLastActivity(group.lastActivity)}
                 </div>
             </div>
+
+            {/* Typing badge (avatars + dots) */}
+            {typingUsers.length > 0 && (
+                <div className="mt-3 flex items-center gap-2">
+                    <div className="flex -space-x-2">
+                        {typingUsers.map(u => (
+                            <img key={u._id} src={u.profilePic || '/avatar.png'} alt={u.fullName}
+                                 className="w-6 h-6 rounded-full border-2 border-base-100" />
+                        ))}
+                    </div>
+                    <span className="typing-dots"><span className="dot" /><span className="dot" /><span className="dot" /></span>
+                    <span className="text-xs text-primary/80">
+                        {typingUsers.length === 1 ? `${typingUsers[0].fullName} đang nhập...` : 'Có người đang nhập...'}
+                    </span>
+                </div>
+            )}
 
             {/* Quick Actions */}
             <div className="mt-4 pt-4 border-t border-base-300 flex items-center gap-2">

@@ -42,6 +42,16 @@ const userSchema = new mongoose.Schema(
             enum: ["family", "bestie", "coworker", "friend", "stranger", null],
             default: null
         },
+        // Nhãn quan hệ theo TỪNG người (per-friend label), chỉ lưu trên user đăng nhập
+        relationLabels: {
+            type: Map,
+            of: {
+                type: String,
+                enum: ["family", "bestie", "coworker", "friend", "stranger"],
+                default: undefined
+            },
+            default: {}
+        },
         // Thêm trường nickname cho user
         nickname: {
             type: String,

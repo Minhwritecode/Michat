@@ -5,6 +5,7 @@ import MessageInput from "../messages/MessageInput";
 import MessageSkeleton from "../skeletons/MessageSkeleton";
 import Message from "../messages/Message";
 import { useAuthStore } from "../../stores/useAuthStore";
+import TypingIndicator from "../TypingIndicator";
 import { Phone, Video, ChevronDown } from "lucide-react";
 import CallModal from "../CallModal";
 import { createPeerConnection, getUserMedia, stopStream } from "../../libs/webrtc";
@@ -37,12 +38,31 @@ const ChatContainer = () => {
     const [isScrolling, setIsScrolling] = useState(false);
     const pcRef = useRef(null);
     const remoteUserRef = useRef(null);
+    const [isPartnerTyping, setIsPartnerTyping] = useState(false);
+    const typingTimeoutRef = useRef(null);
 
     useEffect(() => {
         getMessages(selectedUser._id);
         subscribeToMessages();
         return () => unsubscribeFromMessages();
     }, [selectedUser._id, getMessages, subscribeToMessages, unsubscribeFromMessages]);
+
+    // Typing listener for direct chat
+    useEffect(() => {
+        const handler = (e) => {
+            const { from, isTyping } = e.detail || {};
+            if (!from) return;
+            if (from === selectedUser._id) {
+                setIsPartnerTyping(!!isTyping);
+                if (isTyping) {
+                    clearTimeout(typingTimeoutRef.current);
+                    typingTimeoutRef.current = setTimeout(() => setIsPartnerTyping(false), 1500);
+                }
+            }
+        };
+        window.addEventListener('typing-direct', handler);
+        return () => window.removeEventListener('typing-direct', handler);
+    }, [selectedUser._id]);
 
     // Smooth scroll to bottom with animation
     const scrollToBottom = useCallback((behavior = "smooth") => {
@@ -410,6 +430,11 @@ const ChatContainer = () => {
                     onCancelEdit={handleCancelEdit}
                     privateMessageTo={selectedUser}
                 />
+                {isPartnerTyping && (
+                    <div className="px-4 pb-2">
+                        <TypingIndicator username={selectedUser.fullName} />
+                    </div>
+                )}
             </div>
 
             <CallModal

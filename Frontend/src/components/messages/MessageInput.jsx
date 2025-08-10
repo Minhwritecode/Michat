@@ -95,6 +95,8 @@ const MessageInput = ({
     const [suggestPosition, setSuggestPosition] = useState({ x: 0, y: 0 });
     const [suggestTrigger, setSuggestTrigger] = useState("");
     const inputRef = useRef(null);
+    const typingTimeoutRef = useRef(null);
+    const { socket } = useAuthStore();
     const actionsOverlayRef = useRef(null);
     const integrationsMenuRef = useRef(null);
     const [selectedEmotion, setSelectedEmotion] = useState("neutral");
@@ -292,10 +294,32 @@ const MessageInput = ({
         }
     };
 
-    // Handle input change for suggestions
+    // Handle input change for suggestions + typing indicator
     const handleInputChange = (e) => {
         const value = e.target.value;
         setText(value);
+
+        // Emit typing start on keystroke; schedule stop after debounce
+        try {
+            const auth = useAuthStore.getState().authUser;
+            if (socket && auth?._id) {
+                if (group) {
+                    socket.emit("typing:group", { groupId: group._id, from: auth._id, isTyping: true });
+                } else {
+                    const toId = privateMessageTo?._id || selectedUser?._id;
+                    if (toId) socket.emit("typing:direct", { to: toId, from: auth._id, isTyping: true });
+                }
+                clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = setTimeout(() => {
+                    if (group) {
+                        socket.emit("typing:group", { groupId: group._id, from: auth._id, isTyping: false });
+                    } else {
+                        const toId = privateMessageTo?._id || selectedUser?._id;
+                        if (toId) socket.emit("typing:direct", { to: toId, from: auth._id, isTyping: false });
+                    }
+                }, 1200);
+            }
+        } catch {}
 
         // Check for trigger characters
         const triggers = [":", "@", "#"];
@@ -387,6 +411,42 @@ const MessageInput = ({
                         }
                         value={text}
                         onChange={handleInputChange}
+                        onFocus={() => {
+                            try {
+                                const auth = useAuthStore.getState().authUser;
+                                if (socket && auth?._id) {
+                                    if (group) {
+                                        socket.emit("typing:group", { groupId: group._id, from: auth._id, isTyping: true });
+                                    } else {
+                                        const toId = privateMessageTo?._id || selectedUser?._id;
+                                        if (toId) socket.emit("typing:direct", { to: toId, from: auth._id, isTyping: true });
+                                    }
+                                    clearTimeout(typingTimeoutRef.current);
+                                    typingTimeoutRef.current = setTimeout(() => {
+                                        if (group) {
+                                            socket.emit("typing:group", { groupId: group._id, from: auth._id, isTyping: false });
+                                        } else {
+                                            const toId = privateMessageTo?._id || selectedUser?._id;
+                                            if (toId) socket.emit("typing:direct", { to: toId, from: auth._id, isTyping: false });
+                                        }
+                                    }, 1200);
+                                }
+                            } catch {}
+                        }}
+                        onBlur={() => {
+                            try {
+                                const auth = useAuthStore.getState().authUser;
+                                if (socket && auth?._id) {
+                                    if (group) {
+                                        socket.emit("typing:group", { groupId: group._id, from: auth._id, isTyping: false });
+                                    } else {
+                                        const toId = privateMessageTo?._id || selectedUser?._id;
+                                        if (toId) socket.emit("typing:direct", { to: toId, from: auth._id, isTyping: false });
+                                    }
+                                }
+                            } catch {}
+                            clearTimeout(typingTimeoutRef.current);
+                        }}
                         disabled={
                             group &&
                             !group.members.find(m =>
