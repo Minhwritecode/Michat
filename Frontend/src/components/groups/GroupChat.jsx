@@ -43,6 +43,7 @@ const GroupChat = ({ group }) => {
     const [inviteCode, setInviteCode] = useState(group.inviteCode || "");
     const [selectedMember, setSelectedMember] = useState(null);
     const [privateMessageTo, setPrivateMessageTo] = useState(null);
+    const [typingUsersHeader, setTypingUsersHeader] = useState([]);
 
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -57,6 +58,71 @@ const GroupChat = ({ group }) => {
             getGroupMessages(group._id);
         }
     }, [group?._id, getGroupMessages]);
+
+    // Subscribe to realtime new group messages
+    useEffect(() => {
+        const handler = (e) => {
+            const { groupId } = e.detail || {};
+            if (groupId === group._id) {
+                getGroupMessages(group._id);
+            }
+        };
+        const socketHandler = ({ groupId }) => {
+            try { window.dispatchEvent(new CustomEvent('group-message-new', { detail: { groupId } })); } catch {}
+        };
+        // Attach DOM event and socket listener via auth store socket
+        window.addEventListener('group-message-new', handler);
+        const s = useAuthStore.getState().socket;
+        if (s) s.on('group:message:new', socketHandler);
+        return () => {
+            window.removeEventListener('group-message-new', handler);
+            const s2 = useAuthStore.getState().socket;
+            if (s2) s2.off('group:message:new', socketHandler);
+        };
+    }, [group._id, getGroupMessages]);
+
+    // Join room for this group on mount/unmount
+    useEffect(() => {
+        const s = useAuthStore.getState().socket;
+        if (s && group?._id) s.emit('group:join', { groupId: group._id });
+        return () => {
+            const s2 = useAuthStore.getState().socket;
+            if (s2 && group?._id) s2.emit('group:leave', { groupId: group._id });
+        };
+    }, [group?._id]);
+
+    // Subscribe to typing events for this group to show in header (max 3 users)
+    useEffect(() => {
+        const handler = (e) => {
+            const { groupId, from, isTyping } = e.detail || {};
+            if (!groupId || groupId !== group._id || !from) return;
+            setTypingUsersHeader((prev) => {
+                const setNow = new Map(prev.map(u => [u._id, u]));
+                if (isTyping) {
+                    const member = (group.members || []).find(m => m.user._id === from)?.user;
+                    if (member) setNow.set(from, { _id: from, fullName: member.fullName, profilePic: member.profilePic, ts: Date.now() });
+                } else {
+                    setNow.delete(from);
+                }
+                // prune > 2s
+                const now = Date.now();
+                const pruned = Array.from(setNow.values()).filter(u => now - (u.ts || now) < 2000);
+                return pruned.slice(0, 3);
+            });
+        };
+        const interval = setInterval(() => {
+            setTypingUsersHeader((prev) => {
+                const now = Date.now();
+                const pruned = prev.filter(u => now - (u.ts || now) < 2000);
+                return pruned.slice(0, 3);
+            });
+        }, 1000);
+        window.addEventListener('typing-group', handler);
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('typing-group', handler);
+        };
+    }, [group._id, group.members]);
 
     useEffect(() => {
         scrollToBottom();
@@ -165,6 +231,19 @@ const GroupChat = ({ group }) => {
                                 {group.privacy === "readonly" && (
                                     <span className="text-red-500">• Chỉ đọc</span>
                                 )}
+                                {typingUsersHeader.length > 0 && (
+                                    <span className="flex items-center gap-1 text-primary">
+                                        <div className="flex -space-x-2 mr-1">
+                                            {typingUsersHeader.map(u => (
+                                                <img key={u._id} src={u.profilePic || '/avatar.png'} alt={u.fullName} className="w-5 h-5 rounded-full border-2 border-base-100" />
+                                            ))}
+                                        </div>
+                                        <span className="typing-dots"><span className="dot" /><span className="dot" /><span className="dot" /></span>
+                                        <span>
+                                            {typingUsersHeader.length === 1 ? `${typingUsersHeader[0].fullName} đang nhập...` : 'Có người đang nhập...'}
+                                        </span>
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -218,8 +297,6 @@ const GroupChat = ({ group }) => {
                             <Message
                                 key={message._id}
                                 message={message}
-                                isOwnMessage={message.senderId === authUser._id}
-                                showPrivateIndicator={message.privateTo}
                             />
                         ))}
                         <div ref={messagesEndRef} />
@@ -279,7 +356,7 @@ const GroupChat = ({ group }) => {
                                         >
                                             <div className="flex items-center gap-3">
                                                 <img
-                                                    src={member.user.avatar || "/avatar.png"}
+                                                    src={member.user.profilePic || "/avatar.png"}
                                                     alt={member.user.fullName}
                                                     className="w-8 h-8 rounded-full object-cover"
                                                 />

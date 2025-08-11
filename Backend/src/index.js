@@ -14,6 +14,7 @@ import storyRoutes from "./routes/story.route.js";
 import groupRoutes from "./routes/group.route.js";
 import trelloRoutes from "./routes/trello.route.js";
 import notificationRoutes from "./routes/notification.route.js";
+import { checkBirthdaysAndNotify } from "./controllers/notification.controller.js";
 import locationRoutes from "./routes/location.route.js";
 import pollRoutes from "./routes/poll.route.js";
 import botRoutes from "./routes/bot.route.js";
@@ -183,6 +184,19 @@ app.use("/api/location", locationRoutes);
 app.use("/api/polls", pollRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/bot", botRoutes);
+
+// Internal cron endpoint to broadcast birthdays
+app.post("/internal/cron/birthdays", async (req, res) => {
+    const key = req.get("X-CRON-KEY");
+    const expected = process.env.CRON_KEY && String(process.env.CRON_KEY);
+    if (!expected || key !== expected) return res.status(401).json({ ok: false });
+    try {
+        const result = await checkBirthdaysAndNotify();
+        res.json({ ok: true, ...result });
+    } catch (e) {
+        res.status(500).json({ ok: false });
+    }
+});
 
 // ======================
 // Health Check Endpoint

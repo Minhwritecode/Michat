@@ -231,7 +231,7 @@ const GroupMembersModal = ({ isOpen, onClose, group, groupMessages = [] }) => {
                                 >
                                     <div className="flex items-center gap-3">
                                         <img
-                                            src={member.user.avatar || "/avatar.png"}
+                                            src={member.user.profilePic || "/avatar.png"}
                                             alt={member.user.fullName}
                                             className="w-12 h-12 rounded-full object-cover cursor-pointer"
                                             onClick={() => handleAvatarClick(member)}

@@ -703,8 +703,10 @@ const MessageInput = ({
                 onClose={() => setShowCreatePoll(false)}
                 groupId={group?._id}
                 onPollCreated={(poll) => {
-                    // Handle poll creation - you might want to add it to messages
-                    console.log("Poll created:", poll);
+                    // After creating poll, refresh messages so poll appears
+                    try {
+                        useChatStore.getState().getGroupMessages(group._id);
+                    } catch {}
                 }}
             />
 

@@ -1,4 +1,6 @@
 import Notification from "../models/notification.model.js";
+import User from "../models/user.model.js";
+import { getIO } from "../libs/socket.js";
 
 export const getMyNotifications = async (req, res) => {
   try {
@@ -38,13 +40,39 @@ export const markAllAsRead = async (req, res) => {
 };
 
 // Utility: broadcast birthdays (to be scheduled externally if desired)
-export const checkBirthdaysAndNotify = async (io) => {
+export const checkBirthdaysAndNotify = async (ioParam) => {
   try {
     const today = new Date();
-    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-    // dob only holds month/day; naive scan would require aggregation; omitted for brevity
-  } catch {}
+    const month = today.getMonth();
+    const date = today.getDate();
+
+    // Find users whose dob shares same month/day
+    const users = await User.find({ dob: { $ne: null } }, { _id: 1, fullName: 1, dob: 1 });
+    const birthdayUsers = users.filter(u => {
+      const d = new Date(u.dob);
+      return d.getMonth() === month && d.getDate() === date;
+    });
+
+    if (birthdayUsers.length === 0) return { count: 0 };
+
+    // Create system notifications for all users (broadcast style)
+    const allUsers = await User.find({}, { _id: 1 });
+    const notifs = [];
+    const title = "Sinh nhật hôm nay";
+    const names = birthdayUsers.map(u => u.fullName).join(", ");
+    const body = `Chúc mừng sinh nhật: ${names}! 🎉`;
+    for (const u of allUsers) {
+      notifs.push({ userId: u._id, type: "system", title, body, icon: "", link: "/", meta: { kind: "birthday", users: birthdayUsers.map(b => b._id) } });
+    }
+    if (notifs.length > 0) await Notification.insertMany(notifs);
+
+    // Emit socket event
+    const io = ioParam || (getIO && getIO());
+    if (io) {
+      io.emit("notification:new", { type: "system", title, body, meta: { kind: "birthday" } });
+    }
+    return { count: birthdayUsers.length };
+  } catch (e) { return { error: true }; }
 };
 
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, Plus, Users, Filter, Loader2 } from "lucide-react";
 import useGroupStore from "../../stores/useGroupStore";
+import { useChatStore } from "../../stores/useChatStore";
 import { useAuthStore } from "../../stores/useAuthStore";
 import GroupCard from "./GroupCard";
 import CreateGroupModal from "./CreateGroupModal";
@@ -21,6 +22,7 @@ const GroupList = () => {
     const [typingMap, setTypingMap] = useState({});
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [filter, setFilter] = useState("all"); // all, admin, member
+    const { pinnedGroupIds } = useChatStore();
 
     useEffect(() => {
         fetchGroups(1, 10, searchTerm);
@@ -196,7 +198,17 @@ const GroupList = () => {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredGroups.map((group) => {
+                    {[...filteredGroups]
+                        .sort((a, b) => {
+                            const aPinned = pinnedGroupIds.includes(a._id);
+                            const bPinned = pinnedGroupIds.includes(b._id);
+                            if (aPinned && !bPinned) return -1;
+                            if (!aPinned && bPinned) return 1;
+                            const aTs = new Date(a.lastActivity || 0).getTime();
+                            const bTs = new Date(b.lastActivity || 0).getTime();
+                            return bTs - aTs;
+                        })
+                        .map((group) => {
                         const groupTyping = typingMap[group._id] || {};
                         // Map typing userIds to member info (max 3)
                         const typingUserIds = Object.keys(groupTyping).slice(0, 3);

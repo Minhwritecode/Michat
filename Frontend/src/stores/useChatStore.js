@@ -9,6 +9,13 @@ export const useChatStore = create((set, get) => ({
     selectedUser: null,
     isUsersLoading: false,
     isMessagesLoading: false,
+    // Pinning users and groups (persist locally)
+    pinnedUserIds: (() => {
+        try { return JSON.parse(localStorage.getItem("michat-pinned-users") || "[]"); } catch { return []; }
+    })(),
+    pinnedGroupIds: (() => {
+        try { return JSON.parse(localStorage.getItem("michat-pinned-groups") || "[]"); } catch { return []; }
+    })(),
     // id user vừa được đẩy lên top do tin nhắn mới (để highlight UI)
     lastBubbledUserId: null,
     // Lưu danh sách user đã tắt thông báo (persist localStorage)
@@ -36,8 +43,15 @@ export const useChatStore = create((set, get) => ({
                     label: u.label || (u.relation === 'friend' ? 'friend' : u.label),
                     lastMessageAt: u.lastMessageAt ? new Date(u.lastMessageAt).getTime() : 0
                 }))
-                // sort by lastMessageAt desc if available
-                .sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
+                // sort with pinned first, then by lastMessageAt desc
+                .sort((a, b) => {
+                    const pins = get().pinnedUserIds;
+                    const aPinned = pins.includes(a._id);
+                    const bPinned = pins.includes(b._id);
+                    if (aPinned && !bPinned) return -1;
+                    if (!aPinned && bPinned) return 1;
+                    return (b.lastMessageAt || 0) - (a.lastMessageAt || 0);
+                });
             set({ users });
         } catch (error) {
             toast.error(error.response.data.message);
@@ -242,6 +256,39 @@ export const useChatStore = create((set, get) => ({
         };
     }),
     setNotifications: (items) => set({ notifications: items, unreadNotifications: items.filter(i => !i.read).length }),
+
+    // Pin helpers
+    isUserPinned: (userId) => get().pinnedUserIds.includes(userId),
+    togglePinUser: (userId) => {
+        if (!userId) return;
+        set((state) => {
+            const pins = new Set(state.pinnedUserIds);
+            if (pins.has(userId)) pins.delete(userId); else pins.add(userId);
+            const arr = Array.from(pins);
+            try { localStorage.setItem("michat-pinned-users", JSON.stringify(arr)); } catch {}
+            // re-apply sorting
+            const resorted = [...state.users].sort((a, b) => {
+                const aPinned = arr.includes(a._id);
+                const bPinned = arr.includes(b._id);
+                if (aPinned && !bPinned) return -1;
+                if (!aPinned && bPinned) return 1;
+                return (b.lastMessageAt || 0) - (a.lastMessageAt || 0);
+            });
+            return { pinnedUserIds: arr, users: resorted };
+        });
+    },
+
+    isGroupPinned: (groupId) => get().pinnedGroupIds.includes(groupId),
+    togglePinGroup: (groupId) => {
+        if (!groupId) return;
+        set((state) => {
+            const pins = new Set(state.pinnedGroupIds);
+            if (pins.has(groupId)) pins.delete(groupId); else pins.add(groupId);
+            const arr = Array.from(pins);
+            try { localStorage.setItem("michat-pinned-groups", JSON.stringify(arr)); } catch {}
+            return { pinnedGroupIds: arr };
+        });
+    },
 
     // Mark message as read
     markMessageAsRead: async (messageId) => {

@@ -36,6 +36,11 @@ const messageSchema = new mongoose.Schema({
         format: String,
         caption: String
     }],
+    // Poll reference (for group poll messages)
+    poll: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Poll"
+    },
     image: {
         type: String
     },
@@ -87,6 +92,7 @@ const messageSchema = new mongoose.Schema({
 messageSchema.index({ senderId: 1, receiverId: 1 });
 messageSchema.index({ groupId: 1, createdAt: -1 });
 messageSchema.index({ senderId: 1, groupId: 1, privateTo: 1 });
+messageSchema.index({ poll: 1 });
 
 const Message = mongoose.model("Message", messageSchema);
 export default Message;

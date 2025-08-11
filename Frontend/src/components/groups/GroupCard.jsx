@@ -1,10 +1,12 @@
 import React from "react";
-import { Users, MessageSquare, Lock, Globe, Crown, MoreVertical } from "lucide-react";
+import { Users, MessageSquare, Lock, Globe, Crown, MoreVertical, Pin } from "lucide-react";
 import useGroupStore from "../../stores/useGroupStore";
 import { useAuthStore } from "../../stores/useAuthStore";
+import { useChatStore } from "../../stores/useChatStore";
 
 const GroupCard = ({ group, typingUsers = [], onClick, onOptionsClick }) => {
     const { authUser } = useAuthStore();
+    const { isGroupPinned, togglePinGroup } = useChatStore();
     const { isGroupAdmin, isGroupOwner } = useGroupStore();
 
     const isAdmin = isGroupAdmin(group._id, authUser._id);
@@ -89,6 +91,13 @@ const GroupCard = ({ group, typingUsers = [], onClick, onOptionsClick }) => {
                     className="btn btn-circle btn-sm btn-ghost opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                     <MoreVertical size={16} />
+                </button>
+                <button
+                    onClick={(e) => { e.stopPropagation(); togglePinGroup(group._id); }}
+                    className={`btn btn-circle btn-sm btn-ghost ${isGroupPinned(group._id) ? 'text-primary' : ''}`}
+                    title={isGroupPinned(group._id) ? 'Bỏ ghim' : 'Ghim nhóm'}
+                >
+                    <Pin size={16} />
                 </button>
             </div>
 

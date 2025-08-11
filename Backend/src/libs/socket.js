@@ -91,7 +91,18 @@ export function initSocket(app) {
 
         // Typing indicators - group (lightweight broadcast; clients will filter by groupId)
         socket.on("typing:group", ({ groupId, from, isTyping }) => {
-            io.emit("typing:group", { groupId, from, isTyping });
+            if (!groupId) return;
+            io.to(`group:${groupId}`).emit("typing:group", { groupId, from, isTyping });
+        });
+
+        // Join/Leave group rooms for scoped broadcasts
+        socket.on("group:join", ({ groupId }) => {
+            if (!groupId) return;
+            socket.join(`group:${groupId}`);
+        });
+        socket.on("group:leave", ({ groupId }) => {
+            if (!groupId) return;
+            socket.leave(`group:${groupId}`);
         });
 
         // Push generic notifications to a specific user

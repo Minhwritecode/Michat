@@ -2,6 +2,7 @@ import Group from "../models/group.model.js";
 import Message from "../models/message.model.js";
 import cloudinary, { uploadToCloudinary } from "../libs/cloudinary.js";
 import { ApiError } from "../libs/utils.js";
+import { getIO, getReceiverSocketId } from "../libs/socket.js";
 
 export const sendGroupMessage = async (req, res, next) => {
     try {
@@ -74,6 +75,14 @@ export const sendGroupMessage = async (req, res, next) => {
         group.lastActivity = new Date();
         await group.save();
 
+        // Broadcast to all active group members
+        try {
+            const io = getIO && getIO();
+            if (io) {
+                io.to(`group:${groupId}`).emit("group:message:new", { groupId });
+            }
+        } catch {}
+
         res.status(201).json(message);
     } catch (error) {
         next(error);
@@ -100,7 +109,8 @@ export const getGroupMessages = async (req, res, next) => {
             .skip((page - 1) * limit)
             .limit(limit)
             .populate("senderId", "username fullName avatar")
-            .populate("replyTo");
+            .populate("replyTo")
+            .populate({ path: "poll", populate: [{ path: "createdBy", select: "username fullName avatar" }, { path: "options.votes.user", select: "username fullName avatar" }] });
 
         const total = await Message.countDocuments({ groupId: groupId });
 

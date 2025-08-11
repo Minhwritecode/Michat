@@ -3,7 +3,7 @@ import { useChatStore } from "../stores/useChatStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import useDraftStore from "../stores/useDraftStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
-import { Users } from "lucide-react";
+import { Users, Pin } from "lucide-react";
 
 const LABELS = [
     { key: "all", label: "All" },
@@ -20,7 +20,7 @@ const STATUS = [
 ];
 
 const Sidebar = () => {
-    const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading, subscribeToMessages, unsubscribeFromMessages, lastBubbledUserId, clearLastBubbledUser } = useChatStore();
+    const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading, subscribeToMessages, unsubscribeFromMessages, lastBubbledUserId, clearLastBubbledUser, isUserPinned, togglePinUser } = useChatStore();
     const { onlineUsers } = useAuthStore();
     const { hasDraft, getDraftPreview } = useDraftStore();
     const [showOnlineOnly, setShowOnlineOnly] = useState(false);
@@ -150,7 +150,7 @@ const Sidebar = () => {
                             <div className="relative mx-auto lg:mx-0">
                                 <img
                                     src={user.profilePic || "/avatar.png"}
-                                    alt={user.name}
+                                    alt={user.fullName}
                                     className="size-12 object-cover rounded-full"
                                 />
                                 {onlineUsers.includes(user._id) && (
@@ -167,7 +167,7 @@ const Sidebar = () => {
                                     </span>
                                 )}
                             </div>
-                            <div className="hidden lg:block text-left min-w-0 flex-1">
+                            <div className="hidden lg:flex text-left min-w-0 flex-1 items-center gap-2">
                                 <div className="font-medium truncate">{user.fullName}</div>
                                 <div className="text-sm text-zinc-400 flex items-center gap-2">
                                     <span>
@@ -185,6 +185,14 @@ const Sidebar = () => {
                                         📝 {draftPreview}
                                     </div>
                                 )}
+                                <button
+                                    type="button"
+                                    className={`btn btn-ghost btn-xs ml-auto ${isUserPinned(user._id) ? 'text-primary' : ''}`}
+                                    title={isUserPinned(user._id) ? 'Bỏ ghim' : 'Ghim lên đầu'}
+                                    onClick={(e) => { e.stopPropagation(); togglePinUser(user._id); }}
+                                >
+                                    <Pin size={14} />
+                                </button>
                             </div>
                         </button>
                     );

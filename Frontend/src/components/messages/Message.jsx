@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import LinkPreview from "../LinkPreview";
+import PollCard from "../polls/PollCard";
 import axios from "../../libs/axios";
 
 const EMOTION_STYLES = {
@@ -456,6 +457,27 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
                             </div>
                         )}
 
+                        {/* Poll message */}
+                        {message.poll && (
+                            <div className="mb-2">
+                                <PollCard
+                                    poll={message.poll}
+                                    onVote={(updated) => {
+                                        try {
+                                            // Merge updated poll into local message reference
+                                            message.poll = updated;
+                                        } catch {}
+                                    }}
+                                    onDelete={() => {
+                                        try {
+                                            // Hide poll block if deleted
+                                            message.poll = null;
+                                        } catch {}
+                                    }}
+                                />
+                            </div>
+                        )}
+
                         {/* Message Text + Inline Edit */}
                         {isEditing ? (
                             <div className="flex items-center gap-2">
@@ -464,7 +486,7 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
                                 <button className="btn btn-sm" onClick={() => { setIsEditing(false); setEditText(message.text || ''); }}>Huỷ</button>
                             </div>
                         ) : (
-                            message.text && (
+                            message.text && !message.poll && (
                                 <div>
                                     <div className="mb-2 break-words">{message.text}</div>
                                     {message.text.match(/https?:\/\/[^ \s]+/g)?.map((url, idx) => (

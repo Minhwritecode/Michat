@@ -1,6 +1,8 @@
 import Poll from "../models/poll.model.js";
 import Group from "../models/group.model.js";
 import { ApiError } from "../libs/utils.js";
+import Message from "../models/message.model.js";
+import { getIO } from "../libs/socket.js";
 
 // Create a new poll
 export const createPoll = async (req, res, next) => {
@@ -60,6 +62,24 @@ export const createPoll = async (req, res, next) => {
 
         // Populate creator info
         await poll.populate("createdBy", "username fullName avatar");
+
+        // Also create a group message referencing this poll so it appears in chat
+        try {
+            const message = await Message.create({
+                senderId: userId,
+                groupId,
+                text: "", // poll-only message
+                messageType: "group",
+                poll: poll._id,
+            });
+            await message.populate("senderId", "fullName profilePic");
+
+            // Broadcast lightweight event to clients if socket available
+            const io = getIO && getIO();
+            if (io) {
+                io.emit("group:message:new", { groupId, messageId: message._id });
+            }
+        } catch {}
 
         res.status(201).json({
             success: true,

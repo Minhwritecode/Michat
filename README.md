@@ -54,6 +54,7 @@
 - **Message Deletion**: Delete messages with confirmation
 - **Read Receipts**: See when messages are read by recipients with avatar display
 - **Typing Indicators**: Real-time typing status
+- **Pinned Chats**: Pin user or group conversations to the top regardless of last message time
 - **Draft Messages**: Auto-save and restore unsent messages when switching conversations
 - **Message Reactions**: React to messages with emojis (like, love, laugh, etc.)
 - **Message Forwarding**: Forward messages to other users or groups
@@ -86,6 +87,7 @@
 - **Privacy Levels**: Public, Private, and Read-only group types
 - **Group Nicknames**: Set and edit nicknames for group members
 - **Member Status**: Track member activity and permissions
+- **Advanced Typing Indicators**: In group list and in group header, show up to 2–3 members currently typing
 
 ### 📊 Polls & Surveys
 
@@ -95,6 +97,7 @@
 - **Poll Expiration**: Set expiration dates for polls
 - **Multiple Choice**: Support for single or multiple choice questions
 - **Poll Management**: Create, edit, and delete polls
+- **In-Chat Poll Cards**: Newly created group polls appear directly inside the group message timeline
 
 ### 📍 Location Sharing
 
@@ -105,15 +108,9 @@
 - **Reverse Geocoding**: Convert coordinates to readable addresses
 - **Location Privacy**: Control location sharing permissions
 
-### 📖 Story System
+### 🎉 Daily Birthday Announcements
 
-- **Story Creation**: Create stories with text and media content
-- **Story Viewing**: View stories from all users in horizontal carousel
-- **Story Reactions**: React to stories with emojis
-- **Story Replies**: Reply to stories with text
-- **Story Management**: View and delete your own stories
-- **Story Expiration**: Stories automatically expire after 24 hours
-- **Story History**: Browse your story history in Settings page
+- **Cron-triggered Broadcast**: An internal endpoint can be invoked daily to detect birthdays (matching day/month) and broadcast a `notification:new` to everyone
 
 ### 📖 Story System
 
@@ -201,6 +198,7 @@
 - **Axios** - HTTP client for third-party APIs
 - **Cookie Parser** - Cookie parsing middleware
 - **CORS** - Cross-origin resource sharing
+- **Cron-friendly Endpoints** - Internal routes to support scheduled tasks (e.g., birthday broadcast)
 
 ### Development Tools
 
@@ -481,6 +479,13 @@ GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
 - **Member management** → Add/remove, change roles, toggle chat permissions
 - **Invite system** → Generate and share invite codes
 - **Private messages** → Send direct messages within groups
+ - **Pinned Groups** → Click pin icon on a group card to keep it on top of your group list
+ - **Group Typing Indicators** → See up to 2–3 members typing in list and in chat header
+
+#### Polls in Group Chat
+- Create a poll in a group via the + menu in the message input
+- The poll is posted as a message card in the chat timeline automatically
+- Members can vote in-place; results update accordingly
 
 #### Story System
 - **Create stories** → Add text and media content
@@ -570,6 +575,12 @@ GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
 | `PUT`  | `/:pollId/close`            | Close a poll                   |
 | `DELETE` | `/:pollId`                 | Delete a poll                  |
 
+### Internal Cron Routes (server-only)
+
+| Method | Endpoint                 | Description                            |
+| ------ | ------------------------ | -------------------------------------- |
+| `POST` | `/internal/cron/birthdays` | Trigger daily birthday broadcast       |
+
 ### Location Routes (`/api/location`)
 
 | Method | Endpoint                    | Description                    |
@@ -621,12 +632,16 @@ GOOGLE_TRANSLATE_API_KEY=your_google_translate_api_key_here
 
 ### Server to Client Events
 
-| Event            | Description                 |
-| ---------------- | --------------------------- |
-| `getOnlineUsers` | Broadcast online users list |
-| `newMessage`     | New message received        |
-| `messageSent`    | Message sent confirmation   |
-| `messageDeleted` | Message deleted notification |
+| Event               | Description                                   |
+| ------------------- | --------------------------------------------- |
+| `getOnlineUsers`    | Broadcast online users list                   |
+| `typing:direct`     | Direct chat typing indicator                  |
+| `typing:group`      | Group typing indicator (clients filter by id) |
+| `notification:new`  | Generic notifications (e.g., birthdays)       |
+| `call:incoming`     | WebRTC signaling (incoming call)              |
+| `call:answer`       | WebRTC signaling (answer)                     |
+| `call:ice-candidate`| WebRTC signaling (ICE candidate)              |
+| `call:end`          | WebRTC signaling (end)                        |
 
 ## 🚀 Deployment
 
@@ -656,6 +671,16 @@ JWT_SECRET=your_production_jwt_secret
 # Frontend
 VITE_API_URL=https://your-backend-url.onrender.com
 ```
+
+### Scheduling Daily Birthday Announcements
+
+Use any scheduler (Render Cron, GitHub Actions, crontab) to call the internal endpoint once per day:
+
+```bash
+curl -X POST https://your-backend-url/internal/cron/birthdays
+```
+
+This triggers a scan for users whose DOB matches today (day/month) and broadcasts a `notification:new` to all connected clients.
 
 ## 🤝 Contributing
 
