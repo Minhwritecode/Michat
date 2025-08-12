@@ -23,7 +23,7 @@ const FriendsList = () => {
 
     useEffect(() => { fetchFriends(); }, []);
     useEffect(() => {
-        const onLabel = (e) => fetchFriends();
+        const onLabel = () => fetchFriends();
         window.addEventListener('label-updated', onLabel);
         return () => window.removeEventListener('label-updated', onLabel);
     }, []);

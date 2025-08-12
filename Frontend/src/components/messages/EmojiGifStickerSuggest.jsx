@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { Smile, Image, Sticker, Search, X } from "lucide-react";
-import axios from "../../libs/axios";
 
 const TABS = [
   { key: "emoji", label: "Emoji", icon: <Smile size={16} /> },
@@ -29,7 +28,6 @@ const EmojiGifStickerSuggest = ({
   isOpen, 
   onClose, 
   onSelect, 
-  triggerText = "", 
   position = { x: 0, y: 0 } 
 }) => {
   const [activeTab, setActiveTab] = useState("emoji");

@@ -151,7 +151,9 @@ export const useAuthStore = create((set, get) => ({
         newSocket.on("connect", () => {
             console.log("Socket connected");
             set({ socketConnected: true });
-            try { window.dispatchEvent(new Event('socket-connected')); } catch {}
+            try { window.dispatchEvent(new Event('socket-connected')); } catch (error) {
+                console.debug('socket-connected event dispatch error:', error);
+            }
         });
 
         newSocket.on("disconnect", () => {
@@ -176,7 +178,9 @@ export const useAuthStore = create((set, get) => ({
         });
 
         newSocket.on("notification:new", (notif) => {
-            try { window.dispatchEvent(new CustomEvent('notification-new', { detail: { notif } })); } catch {}
+            try { window.dispatchEvent(new CustomEvent('notification-new', { detail: { notif } })); } catch (error) {
+                console.debug('notification-new event dispatch error:', error);
+            }
         });
 
         set({ socket: newSocket });

@@ -3,17 +3,10 @@ import { Clock } from "lucide-react";
 import { useAuthStore } from "../stores/useAuthStore";
 import { Heart, HeartOff } from "lucide-react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 import ProfileOverview from "../components/profile/ProfileOverview";
 import FriendRequests from "../components/profile/FriendRequests";
 import FriendsList from "../components/profile/FriendsList";
 import StoriesHistory from "../components/profile/StoriesHistory";
-
-const LABELS = [
-    { key: "family", label: "Gia đình" },
-    { key: "friend", label: "Bạn bè" },
-    { key: "stranger", label: "Người lạ" },
-];
 
 const ProfileActionButton = ({ viewedUser, relationStatus, refresh }) => {
     const handleAction = async (action) => {
@@ -57,11 +50,7 @@ const ProfilePage = () => {
     const [viewedUser, setViewedUser] = useState(null);
     const [relationStatus, setRelationStatus] = useState("me");
     const [loading, setLoading] = useState(true);
-    const [friends, setFriends] = useState([]);
-    const [userLabel, setUserLabel] = useState("");
     const [isFamily, setIsFamily] = useState(false);
-    const [myStories, setMyStories] = useState([]);
-    const navigate = useNavigate();
 
     // Giả sử bạn lấy userId từ URL hoặc props, ở đây demo lấy chính mình
     const userId = authUser._id;
@@ -72,7 +61,6 @@ const ProfilePage = () => {
         const res = await fetch(`/api/auth/profile/${userId}`, { credentials: "include" });
         const user = await res.json();
         setViewedUser(user);
-        setUserLabel(user.label || "");
         setIsFamily(user.label === "family");
         // Lấy quan hệ
         const relRes = await fetch(`/api/auth/friends-requests`, { credentials: "include" });
@@ -82,26 +70,6 @@ const ProfilePage = () => {
         else if (rel.sentRequests.some(u => u._id === user._id)) setRelationStatus("sent");
         else if (rel.friendRequests.some(u => u._id === user._id)) setRelationStatus("received");
         else setRelationStatus("none");
-        // Lấy danh sách bạn bè của user đang xem
-        const friendsRes = await fetch(`/api/auth/friends-requests`, { credentials: "include" });
-        const friendsData = await friendsRes.json();
-        if (user._id === authUser._id) setFriends(friendsData.friends);
-        else {
-            // Nếu xem profile người khác, cần API riêng để lấy bạn bè của họ (giả sử user trả về friends)
-            setFriends(user.friends || []);
-        }
-        // Lấy lịch sử story của tôi (nếu xem profile của chính mình)
-        try {
-            if (user._id === authUser._id) {
-                const myStoriesRes = await fetch(`/api/story/my-stories`, { credentials: "include" });
-                if (myStoriesRes.ok) {
-                    const data = await myStoriesRes.json();
-                    setMyStories(Array.isArray(data) ? data : []);
-                }
-            } else {
-                setMyStories([]);
-            }
-        } catch (_) { setMyStories([]); }
 
         setLoading(false);
     };
@@ -110,17 +78,6 @@ const ProfilePage = () => {
 
     const handleImageUpload = async (img) => {
         await updateProfile({ profilePic: img });
-        fetchProfile();
-    };
-
-    const handleLabelChange = async (label) => {
-        setUserLabel(label);
-        await fetch(`/api/auth/label/${viewedUser._id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ label })
-        });
         fetchProfile();
     };
 

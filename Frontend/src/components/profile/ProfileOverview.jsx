@@ -24,7 +24,9 @@ const ProfileOverview = ({ user, onUpdateAvatar }) => {
     const handleDobSave = async () => {
         try {
             await axiosInstance.put("/api/auth/update-profile", { dob });
-        } catch {}
+        } catch (error) {
+            console.error("Failed to save date of birth:", error);
+        }
     };
 
     return (

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Phone, Video, PhoneOff, VideoOff, Mic, MicOff } from "lucide-react";
 
 const CallModal = ({ isOpen, onClose, callType, remoteUser, onAccept, onReject, onEnd, isIncoming, isRinging, localStream, remoteStream, onToggleVideo, onToggleAudio, videoEnabled, audioEnabled }) => {

@@ -68,7 +68,9 @@ const GroupChat = ({ group }) => {
             }
         };
         const socketHandler = ({ groupId }) => {
-            try { window.dispatchEvent(new CustomEvent('group-message-new', { detail: { groupId } })); } catch {}
+            try { window.dispatchEvent(new CustomEvent('group-message-new', { detail: { groupId } })); } catch (error) {
+                console.debug('dispatch group-message-new error:', error);
+            }
         };
         // Attach DOM event and socket listener via auth store socket
         window.addEventListener('group-message-new', handler);

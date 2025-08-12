@@ -123,7 +123,9 @@ export const useChatStore = create((set, get) => ({
 
             // Đồng bộ lại danh sách tin nhắn nhóm từ server để đảm bảo nhất quán
             if (isGroup) {
-                await get().getGroupMessages(targetId).catch(() => { });
+                await get().getGroupMessages(targetId).catch((error) => {
+                    console.debug('refresh group messages error:', error);
+                });
             }
 
             return createdMessage;
@@ -226,7 +228,9 @@ export const useChatStore = create((set, get) => ({
             const setNext = new Set(state.mutedUserIds);
             if (shouldMute) setNext.add(userId); else setNext.delete(userId);
             const nextArr = Array.from(setNext);
-            try { localStorage.setItem("michat-muted-users", JSON.stringify(nextArr)); } catch {}
+            try { localStorage.setItem("michat-muted-users", JSON.stringify(nextArr)); } catch (error) {
+                console.debug('persist muted users error:', error);
+            }
             return { mutedUserIds: nextArr };
         });
     },
@@ -265,7 +269,9 @@ export const useChatStore = create((set, get) => ({
             const pins = new Set(state.pinnedUserIds);
             if (pins.has(userId)) pins.delete(userId); else pins.add(userId);
             const arr = Array.from(pins);
-            try { localStorage.setItem("michat-pinned-users", JSON.stringify(arr)); } catch {}
+            try { localStorage.setItem("michat-pinned-users", JSON.stringify(arr)); } catch (error) {
+                console.debug('persist pinned users error:', error);
+            }
             // re-apply sorting
             const resorted = [...state.users].sort((a, b) => {
                 const aPinned = arr.includes(a._id);
@@ -285,7 +291,9 @@ export const useChatStore = create((set, get) => ({
             const pins = new Set(state.pinnedGroupIds);
             if (pins.has(groupId)) pins.delete(groupId); else pins.add(groupId);
             const arr = Array.from(pins);
-            try { localStorage.setItem("michat-pinned-groups", JSON.stringify(arr)); } catch {}
+            try { localStorage.setItem("michat-pinned-groups", JSON.stringify(arr)); } catch (error) {
+                console.debug('persist pinned groups error:', error);
+            }
             return { pinnedGroupIds: arr };
         });
     },

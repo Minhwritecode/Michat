@@ -319,7 +319,10 @@ const MessageInput = ({
                     }
                 }, 1200);
             }
-        } catch {}
+        } catch (error) {
+            // Non-fatal: ignore typing indicator errors in UI
+            console.debug("typing indicator error:", error);
+        }
 
         // Check for trigger characters
         const triggers = [":", "@", "#"];
@@ -618,7 +621,7 @@ const MessageInput = ({
                         <IntegrationsMenu
                             noTrigger
                             isOpen={false}
-                            onClose={() => { }}
+                            onClose={() => { /* noop */ }}
                             compact
                             onFilePick={(file) => {
                                 setAttachments(prev => [...prev, {
@@ -706,7 +709,9 @@ const MessageInput = ({
                     // After creating poll, refresh messages so poll appears
                     try {
                         useChatStore.getState().getGroupMessages(group._id);
-                    } catch {}
+                    } catch (error) {
+                        console.debug('refresh messages after poll error:', error);
+                    }
                 }}
             />
 

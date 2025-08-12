@@ -63,7 +63,9 @@ const Navbar = () => {
                 const res = await axiosInstance.get('/api/notifications');
                 const items = res.data?.items || [];
                 setNotifications(items);
-            } catch {}
+            } catch (error) {
+                console.debug('fetch notifications error:', error);
+            }
         };
         fetchNotifs();
         const onNew = (e) => {
@@ -211,7 +213,9 @@ const Navbar = () => {
                                                         try {
                                                             await axiosInstance.put('/api/notifications/read-all');
                                                             setNotifications(notifications.map(n => ({ ...n, read: true })));
-                                                        } catch {}
+                                                        } catch (error) {
+                                                            console.debug('mark all notifications read error:', error);
+                                                        }
                                                     }}
                                                 >
                                                     Đánh dấu đọc hết
@@ -229,7 +233,9 @@ const Navbar = () => {
                                                             try {
                                                                 if (!n.read && n._id) await axiosInstance.put(`/api/notifications/${n._id}/read`);
                                                                 markNotificationRead(n._id);
-                                                            } catch {}
+                                                            } catch (error) {
+                                                                console.debug('mark notification read error:', error);
+                                                            }
                                                             if (n.link) window.location.href = n.link;
                                                             setShowNotifs(false);
                                                         }}

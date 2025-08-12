@@ -97,7 +97,7 @@ export default function UserInfoSidebar({
   isBlocked = false,
   isMuted = false
 }) {
-  const { getUsers, selectedUser, setSelectedUser } = useChatStore();
+  const { selectedUser, setSelectedUser } = useChatStore();
   const [tab, setTab] = useState("images");
   const [nickname, setNickname] = useState(initialNickname);
   const [editing, setEditing] = useState(false);
@@ -140,13 +140,13 @@ export default function UserInfoSidebar({
     }
     setLoading(true);
     try {
-      const res = await axiosInstance.put("/api/auth/nickname", { nickname });
+      await axiosInstance.put("/api/auth/nickname", { nickname });
       setEditing(false);
       setHighlight(true);
       setTimeout(() => setHighlight(false), 1200);
       toast.success("Đã cập nhật biệt danh!");
       onUpdateNickname?.(nickname);
-    } catch (err) {
+    } catch {
       toast.error("Cập nhật biệt danh thất bại!");
     } finally {
       setLoading(false);
@@ -196,7 +196,7 @@ export default function UserInfoSidebar({
         try {
           await onMuteNotifications?.(!isMuted);
           toast.success(isMuted ? "Đã bật thông báo" : "Đã tắt thông báo");
-        } catch (error) {
+        } catch {
           toast.error("Thao tác thất bại");
         }
         break;
@@ -214,7 +214,7 @@ export default function UserInfoSidebar({
       await onBlockUser?.(!isBlocked);
       toast.success(isBlocked ? "Đã bỏ chặn người dùng" : "Đã chặn người dùng");
       setShowBlockConfirm(false);
-    } catch (error) {
+    } catch {
       toast.error("Thao tác thất bại");
     }
   };
@@ -225,7 +225,7 @@ export default function UserInfoSidebar({
       toast.success("Đã xóa cuộc trò chuyện");
       setShowDeleteConfirm(false);
       onClose();
-    } catch (error) {
+    } catch {
       toast.error("Xóa cuộc trò chuyện thất bại");
     }
   };

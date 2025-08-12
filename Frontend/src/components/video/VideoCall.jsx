@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import ScreenShareButton from "./ScreenShareButton";
 
-const VideoCall = ({ peerConnection }) => {
+const VideoCall = () => {
   const [isSharing, setIsSharing] = useState(false);
   const screenStreamRef = useRef(null);
 
@@ -17,7 +17,7 @@ const VideoCall = ({ peerConnection }) => {
         handleStopScreenShare();
       };
     } catch (err) {
-      // User từ chối hoặc lỗi
+      console.debug("screen share error:", err);
     }
   };
 
