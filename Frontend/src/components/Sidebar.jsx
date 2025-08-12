@@ -134,9 +134,17 @@ const Sidebar = () => {
                     const draftPreview = getDraftPreview(user._id);
 
                     return (
-                        <button
+                        <div
                             key={user._id}
+                            role="button"
+                            tabIndex={0}
                             onClick={() => setSelectedUser(user)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setSelectedUser(user);
+                                }
+                            }}
                             className={`
                                 w-full p-3 flex items-center gap-3
                                 hover:bg-base-300 transition-colors
@@ -194,7 +202,7 @@ const Sidebar = () => {
                                     <Pin size={14} />
                                 </button>
                             </div>
-                        </button>
+                        </div>
                     );
                 })}
                 {filteredUsers.length === 0 && (

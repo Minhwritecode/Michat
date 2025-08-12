@@ -297,6 +297,7 @@ const GroupChat = ({ group }) => {
                             <Message
                                 key={message._id}
                                 message={message}
+                                showSenderInfo
                             />
                         ))}
                         <div ref={messagesEndRef} />

@@ -80,7 +80,7 @@ class ErrorBoundary extends React.Component {
     }
 }
 
-const Message = ({ message, onReply, onEdit, onForward }) => {
+const Message = ({ message, onReply, onEdit, onForward, showSenderInfo = false }) => {
     const { authUser } = useAuthStore();
     const [showContextMenu, setShowContextMenu] = useState(false);
     const [showReactions, setShowReactions] = useState(false);
@@ -430,8 +430,27 @@ const Message = ({ message, onReply, onEdit, onForward }) => {
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
             >
+                {/* Avatar for group messages (others) */}
+                {!isOwnMessage && showSenderInfo && (
+                    <div className="mr-2 self-end hidden sm:block">
+                        <img
+                            src={message.senderId?.profilePic || "/avatar.png"}
+                            alt={message.senderId?.fullName || "User"}
+                            className="w-8 h-8 rounded-full object-cover"
+                            onError={(e) => { e.currentTarget.src = "/avatar.png"; }}
+                        />
+                    </div>
+                )}
+
                 <div className={`relative max-w-xs lg:max-w-md xl:max-w-lg ${isOwnMessage ? 'order-2' : 'order-1'}`}>
                     {/* Message Content */}
+                    {/* Sender name above bubble for group messages (others) */}
+                    {!isOwnMessage && showSenderInfo && (
+                        <div className="text-xs mb-1 ml-1 text-base-content/70 font-medium">
+                            {message.senderId?.fullName || "Người dùng"}
+                        </div>
+                    )}
+
                     <div
                         className={`p-3 rounded-lg transition-all duration-200 hover:shadow-md relative ${isOwnMessage
                             ? `bg-primary text-primary-content hover:bg-primary/90 ${getEmotionStyle()}`

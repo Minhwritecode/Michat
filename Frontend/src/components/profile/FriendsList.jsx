@@ -34,8 +34,14 @@ const FriendsList = () => {
     };
 
     const filtered = useMemo(() => {
-        if (filter === "all") return friends;
-        return friends.filter(u => (u.label || 'friend') === filter);
+        // Deduplicate by _id to avoid duplicate keys in render
+        const dedupedMap = new Map();
+        for (const u of friends) {
+            if (u && u._id && !dedupedMap.has(u._id)) dedupedMap.set(u._id, u);
+        }
+        const list = Array.from(dedupedMap.values());
+        if (filter === "all") return list;
+        return list.filter(u => (u.label || 'friend') === filter);
     }, [friends, filter]);
 
     return (
