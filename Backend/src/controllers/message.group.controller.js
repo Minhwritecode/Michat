@@ -112,12 +112,30 @@ export const getGroupMessages = async (req, res, next) => {
             .populate("replyTo")
             .populate({ path: "poll", populate: [{ path: "createdBy", select: "username fullName avatar" }, { path: "options.votes.user", select: "username fullName avatar" }] });
 
+        // Augment poll with user-specific computed fields so the client can render and allow voting
+        const messagesWithPollComputed = messages.map((msg) => {
+            const msgObj = msg.toObject();
+            if (msg.poll) {
+                const pollDoc = msg.poll; // Mongoose document
+                try {
+                    msgObj.poll = {
+                        ...pollDoc.toObject(),
+                        userVotes: pollDoc.getUserVotes(userId),
+                        hasVoted: pollDoc.hasUserVoted(userId),
+                        canVote: pollDoc.canUserVote(userId),
+                        results: pollDoc.getResults(pollDoc.settings.allowAnonymousVotes === false)
+                    };
+                } catch {}
+            }
+            return msgObj;
+        });
+
         const total = await Message.countDocuments({ groupId: groupId });
 
         res.status(200).json({
             success: true,
             data: {
-                messages,
+                messages: messagesWithPollComputed,
                 pagination: {
                     currentPage: page,
                     totalPages: Math.ceil(total / limit),

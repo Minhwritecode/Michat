@@ -17,9 +17,19 @@ export function getIO() {
 export function initSocket(app) {
     // Create server from express app
     const server = http.createServer(app);
+    const allowedRaw = process.env.FRONTEND_URLS || process.env.FRONTEND_URL || "http://localhost:5173";
+    const allowedOrigins = allowedRaw.split(',').map(s => s.trim()).filter(Boolean);
     const io = new Server(server, {
         cors: {
-            origin: [process.env.FRONTEND_URL || "http://localhost:5173"],
+            origin: (origin, callback) => {
+                if (!origin) return callback(null, true);
+                if (allowedOrigins.includes(origin)) return callback(null, true);
+                try {
+                    const { hostname } = new URL(origin);
+                    if (hostname.endsWith('.onrender.com')) return callback(null, true);
+                } catch {}
+                return callback(null, false);
+            },
             methods: ["GET", "POST"],
             credentials: true
         }

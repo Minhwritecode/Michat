@@ -32,9 +32,61 @@ const FRONTEND_URL = process.env.FRONTEND_URL || (
         ? 'https://michat-o9uv.onrender.com'
         : 'http://localhost:5173'
 );
+
+// Support multiple allowed origins (comma-separated)
+const FRONTEND_URLS = (process.env.FRONTEND_URLS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+// Build allowed origins list
+const defaultAllowed = new Set([
+    FRONTEND_URL,
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+]);
+FRONTEND_URLS.forEach(u => defaultAllowed.add(u));
+
+const allowedOrigins = Array.from(defaultAllowed);
 const FRONTEND_DOMAIN = new URL(FRONTEND_URL).hostname;
 
 const app = express();
+app.set('trust proxy', 1);
+
+// ======================
+// CORS (placed early to ensure headers on all responses, including errors)
+// ======================
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true); // allow same-origin/server-to-server
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        // Allow Render preview apps and custom Render domains
+        try {
+            const { hostname } = new URL(origin);
+            if (hostname.endsWith('.onrender.com')) return callback(null, true);
+        } catch {}
+        return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "X-Socket-ID"
+    ]
+}));
+// Handle preflight for all routes
+app.options("*", cors({
+    origin: (origin, cb) => {
+        if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+        try { const { hostname } = new URL(origin); if (hostname.endsWith('.onrender.com')) return cb(null, true); } catch {}
+        return cb(null, false);
+    },
+    credentials: true
+}));
 
 // ======================
 // Enhanced Security Middlewares
@@ -63,15 +115,21 @@ app.use(helmet({
                 "https://*.cloudinary.com",
                 "https://*.googleusercontent.com"
             ],
-            connectSrc: [
-                "'self'",
-                FRONTEND_URL,
-                `ws://${FRONTEND_DOMAIN}`,
-                `wss://${FRONTEND_DOMAIN}`,
-                "https://apis.google.com",
-                "https://www.googleapis.com",
-                "https://accounts.google.com"
-            ],
+            connectSrc: (() => {
+                const list = new Set(["'self'", "https://apis.google.com", "https://www.googleapis.com", "https://accounts.google.com"]);
+                allowedOrigins.forEach((o) => {
+                    try {
+                        const u = new URL(o);
+                        list.add(o);
+                        list.add(`ws://${u.hostname}`);
+                        list.add(`wss://${u.hostname}`);
+                    } catch {}
+                });
+                // Also allow Render preview domains
+                list.add('https://*.onrender.com');
+                list.add('wss://*.onrender.com');
+                return Array.from(list);
+            })(),
             workerSrc: ["'self'", "blob:"],
             fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
             frameSrc: [
@@ -96,15 +154,15 @@ app.use(helmet({
     } : false
 }));
 
-// Enhanced Rate Limiting
+// Enhanced Rate Limiting (disabled in development to avoid noisy 429s and CORS-less responses)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: isProduction ? 500 : 1000,
     standardHeaders: true,
     legacyHeaders: false,
-    skip: (req) => req.ip === '::ffff:127.0.0.1'
+    skip: (req) => !isProduction || req.ip === '::ffff:127.0.0.1' || req.ip === '127.0.0.1' || req.ip === '::1'
 });
-app.use(limiter);
+if (isProduction) app.use(limiter);
 
 // ======================
 // Standard Middlewares
@@ -112,17 +170,6 @@ app.use(limiter);
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser(process.env.COOKIE_SECRET || "default-secret-please-change"));
-app.use(cors({
-    origin: FRONTEND_URL,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: [
-        "Content-Type",
-        "Authorization",
-        "X-Requested-With",
-        "X-Socket-ID"
-    ]
-}));
 
 // Request Logging Middleware
 app.use((req, res, next) => {

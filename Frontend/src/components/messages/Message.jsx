@@ -95,6 +95,11 @@ const Message = ({ message, onReply, onEdit, onForward, showSenderInfo = false }
     const [translating, setTranslating] = useState(false);
     const [localReactions, setLocalReactions] = useState(message.reactions || []);
 
+    // Keep local reactions in sync when props.message updates (e.g., via socket)
+    useEffect(() => {
+        setLocalReactions(message.reactions || []);
+    }, [message.reactions]);
+
     // Close context menu when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
